@@ -48,7 +48,7 @@ pu_vals <- open_dataset(file.path(dir_proc, "global_cells"),
 
 # Initialize variables
 last_column_id <- 0
-
+#ncp <- "ncp_mangroves"
 # 1.2 Split by countries ====
 # 'Split' by countries for each ncp and output each one
 for (ncp in ncp_split) {
@@ -65,7 +65,8 @@ for (ncp in ncp_split) {
             species = paste0(ncp, "_", ISONUM)
             ) |>
         rename_with(~c(ncp = "amount"), .cols = all_of(ncp)) |>
-        select(id, species, amount)
+        select(id, species, amount) |>
+        filter(!is.na(amount))
 
     # Create a mapping dataframe with unique numeric IDs for each column name
     mapping_ncp_id <- pu_vals_ncp |>
@@ -80,8 +81,7 @@ for (ncp in ncp_split) {
         left_join(mapping_ncp_id, by = "species") |>
         mutate(species = column_id) |>   # Replace species with the numeric column_id
         select(id, species, amount) |>    # Reorder columns
-        rename(pu = id) |>
-        filter(!is.na(amount))
+        rename(pu = id)
 
     # Update the last_column_id to be used in the next iteration
     last_column_id <- max(mapping_ncp_id$column_id, na.rm = TRUE)
