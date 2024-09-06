@@ -48,7 +48,7 @@ The following R packages are required:
 
 ### Things that need fixing
 
--   ncp_manual_marshes() dissapeared
+- in 2a for reading in nco_split ids, dont' read from dir but form ncp_list 
 
 ## Enhancements
 
@@ -60,6 +60,10 @@ The following R packages are required:
 ## Updates
 
 Last updated on: 30/08/2024 Authors: Matthew Harris and Vignesh Kamath
+
+### 06/09/2024
+
+- Fixing bug related to ncp_split in `2a` where script failed if excluding a 'split' ncp
 
 ### 30/08/2024
 

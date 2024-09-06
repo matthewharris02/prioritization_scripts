@@ -19,8 +19,7 @@ library(terra)
 
 # 1. OPTIONS and set-up ====
 ## 1.1 EDITABLE options ====
-dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2"
-### Prioritzr-related options ====
+dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2"### Prioritzr-related options ====
 write_each = TRUE    # If TRUE, writes solution for each budget
 solver = "lp"        # Which solver: cbc, (lp)symphony
 opt_gap = 0.01       # Choose gap for solver
@@ -30,11 +29,11 @@ opt_threads = 1      # Choose number of threads (ONLY for CBC solver)
 auto_dir = TRUE      # Automatically create needed directories?
 runid = ""           # Additional ID to distinguish runs
 split = TRUE         # Include NCPs split by country?
-opt_ecoregions = FALSE # Include ecoregions?
+opt_ecoregions = TRUE # Include ecoregions?
 # drop_features: Select which features to drop
 #   !! each ones should be a string
 #   !! To include all/exclude none leave empty `c()` or as `NULL`
-drop_feature =  c()
+drop_feature =  c("ncp_usefulplants")
 
 ## 1.2 Shared options ====
 # Load options file to share options with pre-processing
@@ -115,7 +114,7 @@ if (!split) {
             across(
                 .cols = starts_with("ncp"),
                 .fns = ~scales::rescale(.x,
-                                        to = c(0,1),
+                                        to = c(0, 1),
                                         from = c(0, max(.x, na.rm = TRUE)))
             )
 
@@ -125,7 +124,7 @@ if (!split) {
 
 
     grid_cell <- open_dataset(file.path(dir_proc, "global_cells"),
-                             partitioning = c("ISONUM")) |>
+                              partitioning = c("ISONUM")) |>
         select(id, x, y, any_of(col_ecoregions), all_of(ncp_global)) |>
         mutate(
             across(.cols = c(id, x, y), ~as.integer(.x)),
@@ -133,9 +132,7 @@ if (!split) {
         ) |>
         collect()
 
-    ncp_split <- list.files(file.path(dir_proc, "split"),
-                            full.names = TRUE,
-                            pattern = "*.parquet$") |>
+    ncp_split <- paste0(file.path(dir_proc, "split"), "/", ncp_national, ".parquet") |>
         lapply(function(filename) { read_parquet(filename) }) |>
         do.call(rbind, args = _)
 
@@ -148,7 +145,7 @@ if (!split) {
 exclude_feature <- str_flatten(drop_feature, "|")
 # Work-around for matching nothing so that if drop_features is empty, it selects them all
 if (is.null(drop_feature)) {exclude_feature <- "^$"}
-
+feat_master <- data.frame(name = NULL, species = NULL)
 # Get feature ids for the split-by-country features
 if (split) {
     feat_ids_split <- list.files(file.path(dir_proc, "split"),
@@ -227,7 +224,7 @@ if (opt_ecoregions) {
             ecoregions = as.character(ecoregions), # Convert to text to match feat_master
             amount = 1
         ) |>
-        left_join(feat_master, join_by("ecoregions" == "name")) |> # Join ecoregion id with feature name
+        left_join(feat_master, join_by("ecoregions" == "name")) |>
         select(-ecoregions) |>
         select(id, species, amount) |> # Re-order
         rename(
