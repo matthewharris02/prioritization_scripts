@@ -143,7 +143,8 @@ if (!split) {
 ## 3.1 Split feature ids ====
 # Create regex string to exclude vars
 exclude_feature <- str_flatten(drop_feature, "|")
-# Work-around for matching nothing so that if drop_features is empty, it selects them all
+# Work-around for matching nothing so that if drop_features is empty,
+#   it selects them all
 if (is.null(drop_feature)) {exclude_feature <- "^$"}
 feat_master <- data.frame(name = NULL, species = NULL)
 # Get feature ids for the split-by-country features
@@ -159,7 +160,7 @@ if (split) {
             "species" = column_id
         )
     feat_master <- feat_ids_split
-} else {
+} else { # TODO: do we need this else? It re-defines feat_master. Or do we remove first one?
     feat_master <- data.frame(name = NULL, species = NULL)
 }
 
@@ -264,7 +265,7 @@ if (opt_ecoregions) {
 ## All targets ====
 targets <- tibble(
     feature = feat_ncp$species,
-    relative_target = '1',
+    relative_target = "1",
 ) |>
     mutate(relative_target = as.numeric(relative_target))
 
@@ -346,7 +347,9 @@ for (i in 1:length(budgets)) {
     } else { # Add locked-in constraints of previous solution
         # Format previous solution for locked-in constraint
         prev <- solutions[[i - 1]]
-        prev_mod <- cbind(prev[,1:2], sapply(prev[,3], FUN = \(x)if_else(x == 1, TRUE, FALSE)))
+        prev_mod <- cbind(prev[, 1:2],
+                           sapply(prev[, 3],
+                                  FUN = \(x) if_else(x == 1, TRUE, FALSE)))
         # Update problem
         p2 <- p |>
             add_min_shortfall_objective(budget = b_cells) |>
@@ -388,7 +391,7 @@ for (i in 1:length(budgets)) {
 
     solution_details <- rbind(solution_details, details_list)
 
-    print(glue::glue("Solving took {end-start} seconds long...!"))
+    print(glue::glue("Solving took {as.numeric((end - start), units = 'secs')} seconds long...!"))
 
     if (write_each == TRUE) {
         fwrite(s, file.path(dir_output, glue::glue("solution_single_", info_str, ".csv")))
@@ -415,17 +418,17 @@ combined_solution <- solutions |>
     select(id, final) |>
     tibble() |>
     left_join(select(grid_cell, c("id", "x", "y")), by = "id") |>
-    write_csv(file.path(dir_output, str_glue("solution_full_", info_str, ".csv")))
+    write_csv(file.path(dir_output, glue::glue("solution_full_", info_str, ".csv")))
 
 ## 7.2 Convert matrix to raster ====
-r <- rast(combined_solution[,c("x", "y", "final")],
+r <- rast(combined_solution[, c("x", "y", "final")],
           crs = crs(EPSG),
           extent = ext(rast_template)
 )
 
 writeRaster(r,
-            file.path(dir_output, str_glue("solution_full_", info_str, ".tif")),
+            file.path(dir_output, glue::glue("solution_full_", info_str, ".tif")),
             overwrite = T)
 
 times_df <- write.csv(solution_details,
-                      file.path(dir_logs, str_glue("details_", info_str, ".csv")))
+                      file.path(dir_logs, glue::glue("details_", info_str, ".csv")))
