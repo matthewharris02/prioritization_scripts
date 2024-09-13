@@ -48,7 +48,8 @@ The following R packages are required:
 
 ### Things that need fixing
 
-- in 2a for reading in nco_split ids, dont' read from dir but form ncp_list 
+- in 2a for reading in nco_split ids, dont' read from dir but form ncp_list
+- Ensure that the directories for output and logs are empty before writing (to catch not changing run_id)
 
 ## Enhancements
 
