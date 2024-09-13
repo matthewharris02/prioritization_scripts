@@ -20,20 +20,20 @@ library(terra)
 # 1. OPTIONS and set-up ====
 ## 1.1 EDITABLE options ====
 dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2"### Prioritzr-related options ====
-write_each = TRUE    # If TRUE, writes solution for each budget
-solver = "lp"        # Which solver: cbc, (lp)symphony
-opt_gap = 0.01       # Choose gap for solver
-opt_threads = 1      # Choose number of threads (ONLY for CBC solver)
+write_each <- TRUE    # If TRUE, writes solution for each budget
+solver <- "lp"        # Which solver: cbc, (lp)symphony
+opt_gap <- 0.01       # Choose gap for solver
+opt_threads <- 1      # Choose number of threads (ONLY for CBC solver)
 
 ### Solution-related options ====
-auto_dir = TRUE      # Automatically create needed directories?
-runid = ""           # Additional ID to distinguish runs
-split = TRUE         # Include NCPs split by country?
-opt_ecoregions = TRUE # Include ecoregions?
+auto_dir <- TRUE      # Automatically create needed directories?
+runid <- ""           # Additional ID to distinguish runs
+split <- TRUE         # Include NCPs split by country?
+opt_ecoregions <- TRUE # Include ecoregions?
 # drop_features: Select which features to drop
 #   !! each ones should be a string
 #   !! To include all/exclude none leave empty `c()` or as `NULL`
-drop_feature =  c("ncp_usefulplants")
+drop_feature <-  c("ncp_usefulplants")
 
 ## 1.2 Shared options ====
 # Load options file to share options with pre-processing
