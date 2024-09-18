@@ -12,19 +12,20 @@ library(scales)
 library(terra)
 
 # 1. OPTIONS ====
-write_each = TRUE  # If TRUE, writes solution for each budget
-solver = "lp"     # Which solver: cbc, lp(symphony)
-opt_gap = 0.01     # Choose gap for solver
-opt_threads = 0    # Choose number of threads (ONLY for CBC solver)
-opt_budget = 0.05  # Choose budget to test
-num_runs = 3       # Number of times to run the solution
-run_id = ""       # Unique id to identify beyond just the above vars
+write_each <- TRUE  # If TRUE, writes solution for each budget
+solver <- "lp"     # Which solver: cbc, lp(symphony)
+opt_gap <- 0.01     # Choose gap for solver
+opt_threads <- 0    # Choose number of threads (ONLY for CBC solver)
+opt_budget <- 0.05  # Choose budget to test
+num_runs <- 3       # Number of times to run the solution
+run_id <- ""       # Unique id to identify beyond just the above vars
 
 
 dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2"
+dir_src <- dir_wd
 # dir_wd <- "/home/matthewh@internal.wcmc/projects_active/p09217_RestorationPotentialLayer/global2024_v2"
 
-RES = 20 # Resolution: relative to 1km/30arsec
+RES <- 20 # Resolution: relative to 1km/30arsec
 
 # Load package for solver ====
 if (solver == "cbc") {
@@ -47,9 +48,9 @@ dir_out <- file.path(dir_wd, paste0("work_in_progress/", RES, "km"))
 ## PROJECTION ====
 # Set EPSG to the EPSG code (e.g., EPSG:43267, ESRI:54009)
 # Set PROJ to the text that you want to label the files with (e.g., moll, laea)
-EPSG = "ESRI:54009" # EPSG code for the CRS
-PROJ = "moll" # Label ONLY
-EXT = c(-18040000, 18040000, -9020000, 9020000)
+EPSG <- "ESRI:54009" # EPSG code for the CRS
+PROJ <- "moll" # Label ONLY
+EXT <- c(-18040000, 18040000, -9020000, 9020000)
 
 ## Template raster
 rast_template <- rast(

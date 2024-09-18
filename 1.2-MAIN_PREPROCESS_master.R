@@ -25,20 +25,20 @@ dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global
 dir_src <- dir_wd
 # dir_wd <- "/home/matthewh@internal.wcmc/projects_active/p09217_RestorationPotentialLayer/global2024_v2"
 ## Set run-id ====
-runid = ""
+runid <- ""
 ## Options for choosing what to pre-process ====
-pp_countries = TRUE
-pp_hfp = TRUE
-pp_lulc = TRUE
-pp_restorable = TRUE
-pp_ecoregions = TRUE
-pp_ncp_vec = TRUE
-pp_ncp_ras = TRUE
-pp_ncp_mask = TRUE
-pp_cells = TRUE
+pp_countries <- TRUE
+pp_hfp <- TRUE
+pp_lulc <- TRUE
+pp_restorable <- TRUE
+pp_ecoregions <- TRUE
+pp_ncp_vec <- TRUE
+pp_ncp_ras <- TRUE
+pp_ncp_mask <- TRUE
+pp_cells <- TRUE
 
 # automatically create needed sub directories
-auto_dir = TRUE
+auto_dir <- TRUE
 
 # Path to gdalwarp
 # If gdal is on the user or system path, just set to "gdalwarp"

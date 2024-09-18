@@ -18,14 +18,14 @@ dir_src <- dir_wd
 
 ## 1.1 Prioritzr options ====
 # EDIT THESE :)
-write_each = TRUE   # If TRUE, writes solution for each budget
-solver = "lp"       # Which solver: cbc, (lp)symphony
-opt_gap = 0.01       # Choose gap for solver
-opt_threads = 1     # Choose number of threads (ONLY for CBC solver)
-opt_budget = 0.3
-auto_dir = TRUE     # Automatically create needed directories?
-runid = ""      # Additional ID to distinguish runs (NOTE: doesn't work yet
-split = TRUE        # Includes NCPs split by country
+write_each <- TRUE   # If TRUE, writes solution for each budget
+solver <- "lp"       # Which solver: cbc, (lp)symphony
+opt_gap <- 0.01       # Choose gap for solver
+opt_threads <- 1     # Choose number of threads (ONLY for CBC solver)
+opt_budget <- 0.3
+auto_dir <- TRUE     # Automatically create needed directories?
+runid <- ""      # Additional ID to distinguish runs (NOTE: doesn't work yet
+split <- TRUE        # Includes NCPs split by country
 
 ## 1.2 Shared options ====
 # Load options file to share options with pre-processing
