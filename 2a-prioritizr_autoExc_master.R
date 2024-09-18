@@ -19,7 +19,9 @@ library(terra)
 
 # 1. OPTIONS and set-up ====
 ## 1.1 EDITABLE options ====
-dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2"### Prioritzr-related options ====
+dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2"
+dir_src <- dir_wd
+### Prioritzr-related options ====
 write_each <- TRUE    # If TRUE, writes solution for each budget
 solver <- "lp"        # Which solver: cbc, (lp)symphony
 opt_gap <- 0.01       # Choose gap for solver
@@ -37,7 +39,7 @@ drop_feature <-  c("ncp_usefulplants")
 
 ## 1.2 Shared options ====
 # Load options file to share options with pre-processing
-source(file.path(dir_wd, "script_tools/v3/1.1-OPTIONS.R"))
+source(file.path(dir_src, "script_tools/v3/1.1-OPTIONS.R"))
 
 # 1.3 Load package for solver ====
 if (solver == "cbc") {

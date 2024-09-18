@@ -22,6 +22,7 @@
 # 0.1 MAKE CHANGES HERE ====
 ## Set working directory ====
 dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2"
+dir_src <- dir_wd
 # dir_wd <- "/home/matthewh@internal.wcmc/projects_active/p09217_RestorationPotentialLayer/global2024_v2"
 ## Set run-id ====
 runid = ""
@@ -60,13 +61,13 @@ start <- Sys.time()
 
 ## Load dependency scripts ====
 # Load options
-source(file.path(dir_wd, "script_tools/v3/1.1-OPTIONS.R"))
+source(file.path(dir_src, "script_tools/v3/1.1-OPTIONS.R"))
 # Load helper functions
 #   - gdalwarp_args()      -- create gdalwarp command
 #   - prepare_ncp_r_gdal() -- convert raster NCPs using gdal
 #   - prepare_ncp_v_area() -- convert vector NCPs to use polygon area
 #   - prepare_ncp_v_raw()  -- convert vector NCPs using vector attribute
-source(file.path(dir_wd, "script_tools/v3/0.0-helper_functions.R"))
+source(file.path(dir_src, "script_tools/v3/0.0-helper_functions.R"))
 ##%##########################################################################%##
 # 0.3 Automatically defined variables ====
 # The following variables are automatic, and use the above information
@@ -271,7 +272,7 @@ if (pp_ecoregions) {
 ## 1.6 Process NCPs ====
 # NOTE: all NCP and biodiversity layers (ncp_bio) should ALREADY be rasters.
 #   Processing of vectors (e.g., KBAs, salt marshes) is done separately
-source(file.path(dir_wd, "script_tools/v3/1.4-p1-ncp.R"))
+source(file.path(dir_src, "script_tools/v3/1.4-p1-ncp.R"))
 
 
 ### 1.6.1 Vector processing ====

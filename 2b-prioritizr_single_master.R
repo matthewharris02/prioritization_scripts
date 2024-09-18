@@ -13,6 +13,7 @@ library(scales)
 library(terra)
 # 1. OPTIONS and set-up ====
 dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2"
+dir_src <- dir_wd
 # dir_wd <- "/home/matthewh@internal.wcmc/projects_active/p09217_RestorationPotentialLayer/global2024_v2"
 
 ## 1.1 Prioritzr options ====
@@ -28,7 +29,7 @@ split = TRUE        # Includes NCPs split by country
 
 ## 1.2 Shared options ====
 # Load options file to share options with pre-processing
-source(file.path(dir_wd, "script_tools/v3/0.1-OPTIONS.R"))
+source(file.path(dir_src, "script_tools/v3/0.1-OPTIONS.R"))
 
 # 1.3 Load package for solver ====
 if (solver == "cbc") {

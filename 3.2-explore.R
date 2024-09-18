@@ -8,7 +8,8 @@ library(matrixStats)
 library(viridisLite)
 
 dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2"
-source(file.path(dir_wd, "script_tools/v3/1.1-OPTIONS.R"))
+dir_src <- dir_wd
+source(file.path(dir_src, "script_tools/v3/1.1-OPTIONS.R"))
 
 rast_template <- rast(
     crs = crs(EPSG),
