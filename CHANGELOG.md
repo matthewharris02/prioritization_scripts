@@ -1,5 +1,9 @@
 Last updated on: 06/09/2024 Authors: Matthew Harris and Vignesh Kamath
 
+# 13/09/2024
+
+- Major changes to `2c` to make sure that it is updated to follow the `2a` structure. Not finalised or tested.
+
 # 06/09/2024
 
 - Fixing bug related to ncp_split in `2a` where script failed if excluding a 'split' ncp
