@@ -80,10 +80,10 @@ source(file.path(dir_src, "script_tools/v3/0.0-helper_functions.R"))
 dir_in <- file.path(dir_wd, "raw")
 
 if (auto_dir) {
-    if (!dir.exists(dir_out)) {dir.create(dir_out, recursive = TRUE)}
+    if (!dir.exists(dir_out)) dir.create(dir_out, recursive = TRUE)
     walk(
         c(dir_features, dir_pu),
-        ~if(!dir.exists(.x)) { dir.create(.x, recursive = TRUE)}
+        ~if (!dir.exists(.x)) dir.create(.x, recursive = TRUE)
     )
 }
 
@@ -103,7 +103,7 @@ ncps <- variables |>
 
 ## Helper functions ====
 # Helper function to make sure all output files named consistently :)
-fn_template <- function(name, extra = "", ext = ".tif"){
+fn_template <- function(name, extra = "", ext = ".tif") {
     return(paste0(name, "_", RES, "km_", PROJ, extra, ext))
 }
 
@@ -202,7 +202,7 @@ if (pp_restorable) {
     intermediate_hfp_lulc_exclude <- intermediate_hfp * lulc_exclude
 
     # Make sure output name includes the HFP bounds for easy identification
-    out_name <- fn_template(paste0("intermediateHFP_", hfp_lower, "_",hfp_upper, "_excludeNotNat"))
+    out_name <- fn_template(paste0("intermediateHFP_", hfp_lower, "_", hfp_upper, "_excludeNotNat"))
     writeRaster(intermediate_hfp_lulc_exclude,
                 file.path(dir_pu, out_name),
                 overwrite = TRUE)
@@ -302,7 +302,7 @@ if (pp_ncp_vec) {
         writeRaster(file.path(dir_out, "ncp", fn_template("ncp_saltmarshes")),
                     overwrite = TRUE)
     # Prepare vector NCPs that want attribute values
-    prepare_ncp_v_raw("ncp_coastal", 'coastal_potential_cur', 'mean')
+    prepare_ncp_v_raw("ncp_coastal", "coastal_potential_cur", "mean")
 
 
 }
@@ -340,12 +340,12 @@ if (pp_ncp_ras) {
 if (pp_ncp_mask) {
     print("Processing NCPs: masking ====")
     # ncp_list <- unlist(select(ncps, var), use.names = FALSE)
-    pu_mask <- rast(file.path(dir_pu, fn_template(paste0("intermediateHFP_", hfp_lower, "_",hfp_upper, "_excludeNotNat"))))
+    pu_mask <- rast(file.path(dir_pu, fn_template(paste0("intermediateHFP_", hfp_lower, "_", hfp_upper, "_excludeNotNat"))))
 
 
     ncp_list <- list.files(dir_features,
-                           recursive = T,
-                           full.names = T,
+                           recursive = TRUE,
+                           full.names = TRUE,
                            pattern = glue::glue("*_{RES}km_{PROJ}.tif$"))
 
     file_names <- ncp_list |>
@@ -393,7 +393,7 @@ if (pp_cells) {
                              na.rm = FALSE) |>
         setDT()
 
-    pu_vals <- pu_vals[!is.na(ISONUM),][hfp == 1,]
+    pu_vals <- pu_vals[!is.na(ISONUM), ][hfp == 1, ]
 
 
     pu_vals <- pu_vals[, id := 1:.N]
