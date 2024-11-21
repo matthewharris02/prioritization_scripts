@@ -380,8 +380,8 @@ if (pp_cells) {
                               full.names = TRUE)
     ncp_names <- ncp_present |>
         basename() |>
-        str_remove(".tif") |>
-        str_extract("(ncp_[A-Za-z]+)")
+        str_remove_all(fixed(".tif")) |>
+        str_extract("(ncp_[A-Za-z0-9]+)")
     ncp_rast <- ncp_present |>
         map(~rast(.x)) |>
         rast()
