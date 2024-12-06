@@ -32,9 +32,9 @@ pp_hfp <- TRUE
 pp_lulc <- TRUE
 pp_restorable <- TRUE
 pp_ecoregions <- TRUE
-pp_ncp_vec <- TRUE
-pp_ncp_ras <- TRUE
-pp_ncp_mask <- TRUE
+pp_ft_vec <- TRUE
+pp_ft_ras <- TRUE
+pp_ft_mask <- TRUE
 pp_cells <- TRUE
 
 # automatically create needed sub directories
@@ -64,9 +64,9 @@ start <- Sys.time()
 source(file.path(dir_src, "script_tools/v3/1.1-OPTIONS.R"))
 # Load helper functions
 #   - gdalwarp_args()      -- create gdalwarp command
-#   - prepare_ncp_r_gdal() -- convert raster NCPs using gdal
-#   - prepare_ncp_v_area() -- convert vector NCPs to use polygon area
-#   - prepare_ncp_v_raw()  -- convert vector NCPs using vector attribute
+#   - prepare_ft_r_gdal() -- convert raster features using gdal
+#   - prepare_ft_v_area() -- convert vector features to use polygon area
+#   - prepare_ft_v_raw()  -- convert vector features using vector attribute
 source(file.path(dir_src, "script_tools/v3/0.9-helper_functions.R"))
 ##%##########################################################################%##
 # 0.3 Automatically defined variables ====
@@ -93,11 +93,11 @@ variables <- read_csv(file.path(dir_in, "preprocess_info.csv"))
 
 pu_fn <- variables |>
     select(var, fn_raw) |>
-    filter(!grepl("ncp", var)) |>
+    filter(!grepl("ft", var)) |>
     deframe()
 
-ncps <- variables |>
-    filter(grepl("ncp", var)) |>
+features <- variables |>
+    filter(grepl("ft", var)) |>
     filter(!is.na(fn_raw))
 
 
@@ -269,88 +269,84 @@ if (pp_ecoregions) {
 
     rm(land, modified_mask, ecoregions, ecoregions_rast, remnant, ecor2, remnant2)
 }
-## 1.6 Process NCPs ====
-source(file.path(dir_src, "script_tools/v3/1.4-p1-ncp.R"))
-
-
+## 1.6 Process Features ====
 ### 1.6.1 Vector processing ====
-if (pp_ncp_vec) {
-    print("Processing NCP: vectors ====")
+if (pp_ft_vec) {
+    print("Processing features: vectors ====")
 
-    # Process vector NCPs that want the area coverage
-    ncp_fn_area <- ncps |>
+    # Process vector features that want the area coverage
+    ft_fn_area <- features |>
         filter(type == "vec" & method == "area") |>
         select(var, fn_raw) |>
         deframe()
 
-    for (ncp_name in names(ncp_fn_area)) {
-        prepare_ncp_v_area(ncp_name)
+    for (ft_name in names(ft_fn_area)) {
+        prepare_ft_v_area(ft_name)
     }
 
-    ncp_fn_other <- ncps |>
+    ft_fn_other <- features |>
         filter(type == "vec" & method != "area") |>
         select(var, fn_raw) |>
         deframe()
 
     # Manually prepare saltmarshes as weird data
-    marshes <- st_read(file.path(dir_in, ncp_fn_other["ncp_saltmarshes"])) |>
+    marshes <- st_read(file.path(dir_in, ft_fn_other["ft_saltmarshes"])) |>
         st_centroid() |>
         st_transform(st_crs(EPSG)) |>
         rasterize(rast_template, field = "areakm2", fun = "sum") |>
-        writeRaster(file.path(dir_out, "ncp", fn_template("ncp_saltmarshes")),
+        writeRaster(file.path(dir_out, "features", fn_template("ft_saltmarshes")),
                     overwrite = TRUE)
-    # Prepare vector NCPs that want attribute values
-    prepare_ncp_v_raw("ncp_coastal", "coastal_potential_cur", "mean")
+    # Prepare vector features that want attribute values
+    prepare_ft_v_raw("ft_coastal", "coastal_potential_cur", "mean")
 
 
 }
 ### 1.6.2 Raster processing ====
-if (pp_ncp_ras) {
+if (pp_ft_ras) {
 
-    print("Processing NCP: rasters ====")
-    ncp_fn_r <- ncps |>
+    print("Processing features: rasters ====")
+    ft_fn_r <- features |>
         filter(type == "ras") |>
         select(var, fn_raw) |>
         deframe()
 
 
-    ncp_method <- ncps |>
+    ft_method <- features |>
         filter(type == "ras") |>
         select(var, method) |>
         # mutate(method = "average") |> # manually set method to 'average' for all to fix errors
         deframe()
 
 
-    for (ncp in names(ncp_fn_r)) {
-        print(paste0("Processing: ", ncp, " ..."))
-        ifile <- file.path(dir_in, ncp_fn_r[ncp])
-        ofile <- file.path(dir_features, fn_template(ncp))
-        method <- ncp_method[ncp]
-        prepare_ncp_r_gdal(ifile, ofile, method, gdalwarp_path)
+    for (ft in names(ft_fn_r)) {
+        print(paste0("Processing: ", fy, " ..."))
+        ifile <- file.path(dir_in, ft_fn_r[ft])
+        ofile <- file.path(dir_features, fn_template(ft))
+        method <- ft_method[ft]
+        prepare_ft_r_gdal(ifile, ofile, method, gdalwarp_path)
 
     }
 
 
 }
-### 1.6.3 Mask NCPs to PU ====
+### 1.6.3 Mask features to PU ====
 # Mask with planning units so only necessary ones kept
 
-if (pp_ncp_mask) {
-    print("Processing NCPs: masking ====")
-    # ncp_list <- unlist(select(ncps, var), use.names = FALSE)
+if (pp_ft_mask) {
+    print("Processing features: masking ====")
     pu_mask <- rast(file.path(dir_pu, fn_template(paste0("intermediateHFP_", hfp_lower, "_", hfp_upper, "_excludeNotNat"))))
 
 
-    ncp_list <- list.files(dir_features,
+    ft_list <- list.files(dir_features,
                            recursive = TRUE,
                            full.names = TRUE,
                            pattern = glue::glue("*_{RES}km_{PROJ}.tif$"))
 
-    file_names <- ncp_list |>
+    file_names <- ft_list |>
         basename() |>
         str_remove_all(".tif")
 
-    ncp_list |>
+    ft_list |>
         map(~rast(.x)) |>
         map(~mask(.x, pu_mask, maskvalue = c(0, NA))) |>
         walk2(
@@ -373,19 +369,19 @@ if (pp_cells) {
     hfp_int <- rast(file.path(dir_pu, str_glue("intermediateHFP_{hfp_lower}_{hfp_upper}_excludeNotNat_{RES}km_{PROJ}.tif")))
     ecoregions <- rast(file.path(dir_pu, fn_template("ecoregions_withIceRock")))
 
-    ncp_present <- list.files(dir_features,
+    ft_present <- list.files(dir_features,
                               pattern = "_mask.tif$",
                               full.names = TRUE)
-    ncp_names <- ncp_present |>
+    ft_names <- ft_present |>
         basename() |>
         str_remove_all(fixed(".tif")) |>
-        str_extract("(ncp_[A-Za-z0-9]+)")
-    ncp_rast <- ncp_present |>
+        str_extract("(ft_[A-Za-z0-9]+)")
+    ft_rast <- ft_present |>
         map(~rast(.x)) |>
         rast()
 
-    all_rast <- c(pu_rast, hfp_int, ecoregions, ncp_rast)
-    names(all_rast) <- c("ISONUM", "lulc", "hfp", "ecoregions", ncp_names)
+    all_rast <- c(pu_rast, hfp_int, ecoregions, ft_rast)
+    names(all_rast) <- c("ISONUM", "lulc", "hfp", "ecoregions", ft_names)
     pu_vals <- as.data.frame(all_rast,
                              xy = TRUE,
                              na.rm = FALSE) |>
