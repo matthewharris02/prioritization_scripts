@@ -228,7 +228,7 @@ if (pp_restorable) {
 if (pp_ecoregions) {
     print("* Processing ecoregions *")
     # Load LULC not-natural layer as 'modified' land map
-    land <- rast(file.path(dir_pu, fn_template("cop_excludeNotNat")))
+    land <- rast(file.path(dir_pu, fn_template("lulc_converted")))
     modified_mask <- land |>
         classify(cbind(0, NA))
 
