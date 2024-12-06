@@ -256,16 +256,6 @@ if (pp_ecoregions) {
     print("CSV WRITE...")
     write_csv(remnant_table, file.path(dir_pu, "global_ecoregions_moll.csv"))
 
-    ### 1.5.3 Create without ice and rock ====
-    ecor2 <- classify(ecoregions_rast, cbind(0, NA))
-    writeRaster(ecor2,
-                file.path(dir_pu, fn_template("ecoregions_noIceRock")),
-                overwrite = TRUE)
-
-    remnant2 <- classify(remnant, cbind(0, NA))
-    writeRaster(remnant2,
-                file.path(dir_pu, fn_template("ecoregionsremnant_noIceRock")),
-                overwrite = TRUE)
 
     rm(land, modified_mask, ecoregions, ecoregions_rast, remnant, ecor2, remnant2)
 }
