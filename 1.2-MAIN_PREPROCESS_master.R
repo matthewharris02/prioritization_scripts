@@ -270,8 +270,6 @@ if (pp_ecoregions) {
     rm(land, modified_mask, ecoregions, ecoregions_rast, remnant, ecor2, remnant2)
 }
 ## 1.6 Process NCPs ====
-# NOTE: all NCP and biodiversity layers (ncp_bio) should ALREADY be rasters.
-#   Processing of vectors (e.g., KBAs, salt marshes) is done separately
 source(file.path(dir_src, "script_tools/v3/1.4-p1-ncp.R"))
 
 
