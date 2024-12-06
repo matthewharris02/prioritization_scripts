@@ -82,7 +82,7 @@ dir_in <- file.path(dir_wd, "raw")
 if (auto_dir) {
     if (!dir.exists(dir_out)) dir.create(dir_out, recursive = TRUE)
     walk(
-        c(dir_features, dir_pu),
+        c(dir_features, dir_pu, dir_proc, dir_inter),
         ~if (!dir.exists(.x)) dir.create(.x, recursive = TRUE)
     )
 }
