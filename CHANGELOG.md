@@ -1,4 +1,9 @@
-Last updated on: 06/09/2024 Authors: Matthew Harris and Vignesh Kamath
+Last updated on: 06/12/2024 Authors: Matthew Harris and Vignesh Kamath
+
+# 06/12/2024
+
+- Rename all references to `ncp` to `ft` or `feature` to be clearer, more general (and more accurate). Only done for `1.x` and `2a`
+- Change method for human footprint: use gdal_calc instead of `terra::classify` and reclassify before resample
 
 # 13/09/2024
 
