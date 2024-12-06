@@ -46,6 +46,8 @@ auto_dir <- TRUE
 #   On windows, probably: C:/OSGeo4W/bin/gdalwarp.exe
 #   On linux, probably already on path :)
 gdalwarp_path <- "gdalwarp"
+# Probably "gdal_calc.py" if system set correctly
+gdalcalc_path <- "gdal_calc"
 ##%##########################################################################%##
 # 0.2 - SET UP ====
 ## Load libraries
