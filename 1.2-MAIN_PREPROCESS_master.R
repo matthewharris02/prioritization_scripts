@@ -347,9 +347,9 @@ if (pp_ft_mask) {
 
 
     ft_list <- list.files(dir_features,
-                           recursive = TRUE,
-                           full.names = TRUE,
-                           pattern = glue::glue("*_{RES}km_{PROJ}.tif$"))
+                          recursive = TRUE,
+                          full.names = TRUE,
+                          pattern = glue::glue("*_{RES}km_{PROJ}.tif$"))
 
     file_names <- ft_list |>
         basename() |>
@@ -379,8 +379,8 @@ if (pp_cells) {
     ecoregions <- rast(file.path(dir_pu, fn_template("ecoregions_withIceRock")))
 
     ft_present <- list.files(dir_features,
-                              pattern = "_mask.tif$",
-                              full.names = TRUE)
+                             pattern = "_mask.tif$",
+                             full.names = TRUE)
     ft_names <- ft_present |>
         basename() |>
         str_remove_all(fixed(".tif")) |>
