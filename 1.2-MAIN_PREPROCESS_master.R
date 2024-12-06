@@ -67,7 +67,7 @@ source(file.path(dir_src, "script_tools/v3/1.1-OPTIONS.R"))
 #   - prepare_ncp_r_gdal() -- convert raster NCPs using gdal
 #   - prepare_ncp_v_area() -- convert vector NCPs to use polygon area
 #   - prepare_ncp_v_raw()  -- convert vector NCPs using vector attribute
-source(file.path(dir_src, "script_tools/v3/0.0-helper_functions.R"))
+source(file.path(dir_src, "script_tools/v3/0.9-helper_functions.R"))
 ##%##########################################################################%##
 # 0.3 Automatically defined variables ====
 # The following variables are automatic, and use the above information
