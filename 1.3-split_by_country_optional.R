@@ -1,5 +1,5 @@
 ##%##########################################################################%##
-#       Split NCPs by country (i.e., assign id to each country-feature)         #
+#       Split features by country (i.e., assign id to each country-feature)         #
 #           V 02.08.2024    Matthew Harris and Vignesh Kamath                  #
 ##%##########################################################################%##
 
@@ -34,11 +34,11 @@ if (!dir.exists(dir_split)) { dir.create(dir_split) }
 
 # 0.4 Load Information ====
 start <- Sys.time()
-# Read in data on variables to automatically select national vs global NCPs
+# Read in data on variables to automatically select national vs global features
 variables <- read_csv(file.path(dir_in, "preprocess_info.csv"))
-ncp_split <- variables |>
+ft_split <- variables |>
     filter(split == "national") |>
-    filter(grepl("ncp*", var)) |>
+    filter(grepl("ft*", var)) |>
     select(var) |>
     unlist(use.names = FALSE)
 
@@ -49,28 +49,27 @@ pu_vals <- open_dataset(file.path(dir_proc, "global_cells"),
 
 # Initialize variables
 last_column_id <- 0
-#ncp <- "ncp_mangroves"
 # 1.2 Split by countries ====
-# 'Split' by countries for each ncp and output each one
-for (ncp in ncp_split) {
-    pu_vals_ncp <- pu_vals |>
-        select(id, ISONUM, all_of(ncp)) |>
+# 'Split' by countries for each feature and output each one
+for (ft in ft_split) {
+    pu_vals_ft <- pu_vals |>
+        select(id, ISONUM, all_of(ft)) |>
         collect() |> # Pull data into R before applying window function
-        mutate(across(all_of(ncp),
+        mutate(across(all_of(ft),
                       ~scales::rescale(.x,
                                        to = c(0,1),
                                        from = c(0, max(.x, na.rm = TRUE))
                                        )
         ))|>
         mutate(
-            species = paste0(ncp, "_", ISONUM)
+            species = paste0(ft, "_", ISONUM)
             ) |>
-        rename_with(~c(ncp = "amount"), .cols = all_of(ncp)) |>
+        rename_with(~c(ft = "amount"), .cols = all_of(ft)) |>
         select(id, species, amount) |>
         filter(!is.na(amount))
 
     # Create a mapping dataframe with unique numeric IDs for each column name
-    mapping_ncp_id <- pu_vals_ncp |>
+    mapping_ft_id <- pu_vals_ft |>
         distinct(species) |>
         mutate(
             column_id = row_number() + last_column_id
@@ -78,21 +77,21 @@ for (ncp in ncp_split) {
 
 
     # Join the mapping dataframe to the long dataframe
-    pu_vals_ncp_2 <- pu_vals_ncp |>
-        left_join(mapping_ncp_id, by = "species") |>
+    pu_vals_ft_2 <- pu_vals_ft |>
+        left_join(mapping_ft_id, by = "species") |>
         mutate(species = column_id) |>   # Replace species with the numeric column_id
         select(id, species, amount) |>    # Reorder columns
         rename(pu = id)
 
     # Update the last_column_id to be used in the next iteration
-    last_column_id <- max(mapping_ncp_id$column_id, na.rm = TRUE)
+    last_column_id <- max(mapping_ft_id$column_id, na.rm = TRUE)
 
     # Write mappping id to file for info
-    write.csv(mapping_ncp_id, file.path(dir_split, paste0("mapping_", ncp, ".csv")),
+    write.csv(mapping_ft_id, file.path(dir_split, paste0("mapping_", ft, ".csv")),
               row.names = FALSE)
 
-    # Write ncp rij matrix to file
-    write_parquet(pu_vals_ncp_2, file.path(dir_split, paste0(ncp, ".parquet")))
+    # Write feature rij matrix to file
+    write_parquet(pu_vals_ft_2, file.path(dir_split, paste0(ft, ".parquet")))
 }
 end <- Sys.time()
 print("Finished!")

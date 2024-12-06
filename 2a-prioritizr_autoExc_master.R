@@ -30,12 +30,12 @@ opt_threads <- 1      # Choose number of threads (ONLY for CBC solver)
 ### Solution-related options ====
 auto_dir <- TRUE      # Automatically create needed directories?
 runid <- ""           # Additional ID to distinguish runs
-split <- TRUE         # Include NCPs split by country?
+split <- TRUE         # Include features split by country?
 opt_ecoregions <- TRUE # Include ecoregions?
 # drop_features: Select which features to drop
 #   !! each ones should be a string
 #   !! To include all/exclude none leave empty `c()` or as `NULL`
-drop_feature <-  c("ncp_usefulplants")
+drop_feature <-  c("ft_usefulplants")
 
 ## 1.2 Shared options ====
 # Load options file to share options with pre-processing
@@ -66,23 +66,23 @@ rast_template <- rast(
     ext = ext(EXT)
 )
 
-## 1.6 Load NCP variable information ====
+## 1.6 Load feature variable information ====
 exclude_feature <- str_flatten(drop_feature, "|") # Create regex string to exclude vars
 if (is.null(drop_feature)) {exclude_feature <- "^$"} # Work-around for matching nothing so that if drop_features is empty, it selects them all
 
 variables <- read_csv(file.path(dir_in, "preprocess_info.csv")) |>
-    filter(grepl("ncp*", var)) |> # select only ncp_ variables
+    filter(grepl("ft*", var)) |> # select only ft_ variables
     filter(!grepl(exclude_feature, var)) # exclude the variables in drop_feature
 
-# List of all ncp features for loading
-ncp_all <- unlist(select(variables, var), use.names = FALSE)
+# List of all features for loading
+ft_all <- unlist(select(variables, var), use.names = FALSE)
 
-# List of ncps to be split nationally or left globally for selecting later
-ncp_national <- variables |>
+# List of features to be split nationally or left globally for selecting later
+ft_national <- variables |>
     filter(split == "national") |>
     select(var) |>
     unlist(use.names = FALSE)
-ncp_global <- variables |>
+ft_global <- variables |>
     filter(split == "global") |>
     select(var) |>
     unlist(use.names = FALSE)
@@ -103,18 +103,18 @@ if (!split) {
 
     grid_cell <- open_dataset(file.path(dir_proc, "global_cells"),
                               partitioning = c("ISONUM")) |>
-        select(id, x, y, any_of(col_ecoregions), all_of(ncp_all)) |>
+        select(id, x, y, any_of(col_ecoregions), all_of(ft_all)) |>
         mutate(
             across(any_of(c("id", "x", "y", col_ecoregions)),
                    ~as.integer(.x)),
-            across(any_of(c("ncp_kba", "ncp_ramsar", "ncp_saltmarshes")), # Use any_of just in case one of these is excluded
+            across(any_of(c("ft_kba", "ft_ramsar", "ft_saltmarshes")), # Use any_of just in case one of these is excluded
                    ~ifelse(is.na(.x), 0, .x)),
         ) |>
         collect() |>
         mutate(
             cost = 1,
             across(
-                .cols = starts_with("ncp"),
+                .cols = starts_with("ft"),
                 .fns = ~scales::rescale(.x,
                                         to = c(0, 1),
                                         from = c(0, max(.x, na.rm = TRUE)))
@@ -127,14 +127,14 @@ if (!split) {
 
     grid_cell <- open_dataset(file.path(dir_proc, "global_cells"),
                               partitioning = c("ISONUM")) |>
-        select(id, x, y, any_of(col_ecoregions), all_of(ncp_global)) |>
+        select(id, x, y, any_of(col_ecoregions), all_of(ft_global)) |>
         mutate(
             across(.cols = c(id, x, y), ~as.integer(.x)),
             cost = 1
         ) |>
         collect()
 
-    ncp_split <- paste0(file.path(dir_proc, "split"), "/", ncp_national, ".parquet") |>
+    ft_split <- paste0(file.path(dir_proc, "split"), "/", ft_national, ".parquet") |>
         lapply(function(filename) { read_parquet(filename) }) |>
         do.call(rbind, args = _)
 
@@ -177,13 +177,13 @@ add_feat <- function(feat, feat_master) {
 }
 
 ## 3.3 Add features: global ====
-# Add feature for each global ncp
-for (feat in ncp_global) {
+# Add feature for each global feature (exc. ecoregions)
+for (feat in ft_global) {
     feat_master <- add_feat(feat, feat_master)
 }
 
-# Create intermediate feat_ncp to distinguish NCP from ecoregions later
-feat_ncp <- feat_master
+# Create intermediate feat_ft to distinguish ecoregions from other features later
+feat_ft <- feat_master
 
 ## 3.4 Ecoregion features ====
 if (opt_ecoregions) {
@@ -208,15 +208,15 @@ feat_ids <- deframe(feat_master)
 # 4. RIJ ====
 rij_global <- data.frame(pu = NULL, species = NULL, amount = NULL)
 
-for (ncp in ncp_global) {
-    pu_vals_ncp <- grid_cell |>
-        select(id, all_of(ncp)) |>
-        mutate(species = feat_ids[ncp]) |>
-        rename_with(~c(ncp = "amount"), .cols = all_of(ncp)) |>
+for (ft in ft_global) {
+    pu_vals_ft <- grid_cell |>
+        select(id, all_of(ft)) |>
+        mutate(species = feat_ids[ft]) |>
+        rename_with(~c(ft = "amount"), .cols = all_of(ft)) |>
         select(id, species, amount) |>
         filter(!is.na(amount)) |>
         rename("pu" = id)
-    rij_global <- bind_rows(rij_global, pu_vals_ncp)
+    rij_global <- bind_rows(rij_global, pu_vals_ft)
 }
 
 if (opt_ecoregions) {
@@ -233,9 +233,9 @@ if (opt_ecoregions) {
         rename(
             "pu" = id
         )
-    rij <- rbindlist(list(ncp_split, rij_global, rij_ecoregions))
+    rij <- rbindlist(list(ft_split, rij_global, rij_ecoregions))
 } else {
-    rij <- rbind(ncp_split, rij_global)
+    rij <- rbind(ft_split, rij_global)
 }
 
 
@@ -266,7 +266,7 @@ if (opt_ecoregions) {
 }
 ## All targets ====
 targets <- tibble(
-    feature = feat_ncp$species,
+    feature = feat_ft$species,
     relative_target = "1",
 ) |>
     mutate(relative_target = as.numeric(relative_target))
@@ -314,8 +314,8 @@ print(glue::glue("Threads: {opt_threads}"))
 print(glue::glue("Number of features: {dim(features)[1]}"))
 print(glue::glue("Number of PU: {dim(costs)[1]}"))
 # print("List of features:")
-# for (ncp in ncp_feats) {
-#     print(glue::glue("  - {ncp}"))
+# for (ft in ft_feats) {
+#     print(glue::glue("  - {ft}"))
 # }
 sink()
 sink(type = "message")
