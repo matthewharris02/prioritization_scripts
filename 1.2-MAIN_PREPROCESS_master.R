@@ -152,11 +152,28 @@ if (pp_countries) {
 ## 1.2 Human footprint ====
 if (pp_hfp) {
     print("* Processing Human Footprint *")
+
+    # Reclassify with gdal_calc.py
     ifile <- file.path(dir_in, pu_fn["hfp"])
-    ofile <- file.path(dir_pu, fn_template("hfp"))
-    # args_additional <- "-srcnodata 128 -dstnodata -128"
-    args <- gdalwarp_args("mode", ifile, ofile, EPSG, RES, EXT) #, args = args_additional)
-    system2(gdalwarp_path, args, wait = TRUE)
+    ofile <- file.path(dir_inter, fn_template("hfp_binary"))
+    system2(
+        gdalcalc_path,
+        glue(
+            ' -A "{ifile}"',
+            ' --calc="(A<={hfp_lower})*(A>={hfp_upper})*0+(A>{hfp_lower})*(A<{hfp_upper})*1"',
+            ' --co compress=lzw --overwrite --outfile "{ofile}"'
+        ),
+        wait = TRUE
+    )
+
+    # Reduce resolution with gdalwarp
+    ifile <- file.path(dir_inter, fn_template("hfp_binary"))
+    ofile <- file.path(dir_pu, fn_template("hfp_mask"))
+    system2(
+        gdalwarp_path,
+        gdalwarp_args("mode", ifile, ofile, EPSG, RES, EXT),
+        wait = TRUE
+    )
 }
 
 ## 1.3 LULC ====
