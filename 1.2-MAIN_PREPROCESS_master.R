@@ -273,10 +273,10 @@ if (pp_ecoregions) {
     print("CSV WRITE...")
     write_csv(remnant_table, file.path(dir_pu, "global_ecoregions_moll.csv"))
 
-
-    rm(land, modified_mask, ecoregions, ecoregions_rast, remnant, ecor2, remnant2)
+    rm(land, modified_mask, ecoregions, ecoregions_rast, remnant)
 }
-## 1.6 Process Features ====
+
+## 1.6 Process non-ecoregion Features ====
 ### 1.6.1 Vector processing ====
 if (pp_ft_vec) {
     print("Processing features: vectors ====")
