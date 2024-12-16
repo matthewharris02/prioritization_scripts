@@ -239,12 +239,12 @@ if (pp_ecoregions) {
         st_transform(st_crs(EPSG)) |>
         rasterize(rast_template, field = "ECO_ID") |>
         mask(land) |>
-        writeRaster(file.path(dir_pu, fn_template("ecoregions_withIceRock")),
+        writeRaster(file.path(dir_pu, fn_template("ecoregions")),
                     overwrite = TRUE)
 
     remnant <- ecoregions_rast * modified_mask
     writeRaster(remnant,
-                file.path(dir_pu, fn_template("ecoregionsremnant_withIceRock")),
+                file.path(dir_pu, fn_template("ecoregionsremnant")),
                 overwrite = TRUE)
 
     ### 1.5.1 Calculate number of pixels per ecoregion ====
