@@ -181,10 +181,51 @@ if (pp_hfp) {
 ## 1.3 LULC ====
 if (pp_lulc) {
     print("* Processing LULC *")
-    ifile <- file.path(dir_in, pu_fn["lulc"])
-    ofile <- file.path(dir_pu, fn_template("lulc"))
-    args <- gdalwarp_args("mode", ifile, ofile, EPSG, RES, EXT)
-    system2(gdalwarp_path, args, wait = TRUE)
+    fns_lulc <- variables |>
+        select(var, fn_raw) |>
+        filter(grepl("lulc", var)) |>
+        filter(var != "lulc_discrete") |>
+        deframe()
+
+    # Convert fractional cover to correct resolution
+    for (fn_lulc in names(fns_lulc)) {
+        ifile <- file.path(dir_in, pu_fn[fn_lulc])
+        ofile <- file.path(dir_inter, fn_template(fn_lulc))
+        args <- gdalwarp_args("average", ifile, ofile, EPSG, RES, EXT)
+        print(args)
+        system2(gdalwarp_path, args, wait = TRUE)
+    }
+
+    # Create binary converted land raster
+    built <- rast(file.path(dir_inter, fn_template("lulc_built")))
+    crops <- rast(file.path(dir_inter, fn_template("lulc_crop")))
+    converted <- (built + crops) |>
+        classify(data.frame(
+            from    = c(0,  50),
+            to      = c(50, Inf),
+            becomes = c(0,  1)
+        ),
+        right = FALSE # so >= 50
+        )
+    writeRaster(converted, file.path(dir_pu, fn_template("lulc_converted")))
+
+    # Create binary 'other excluded land' raster
+    pwater <- rast(file.path(dir_inter, fn_template("lulc_pwater")))
+    swater <- rast(file.path(dir_inter, fn_template("lulc_swater")))
+    moss <- rast(file.path(dir_inter, fn_template("lulc_moss")))
+    snow <- rast(file.path(dir_inter, fn_template("lulc_snow")))
+    bare <- rast(file.path(dir_inter, fn_template("lulc_bare")))
+
+    lulc_other <- (pwater + swater + moss + snow + bare) |>
+        classify(data.frame(
+            from    = c(0,  50),
+            to      = c(50, Inf),
+            becomes = c(0,  1)
+        ),
+        right = FALSE # so >= 50
+        )
+    writeRaster(lulc_other, file.path(dir_pu, fn_template("lulc_other")), overwrite = TRUE)
+
 }
 
 
