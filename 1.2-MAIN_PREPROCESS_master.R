@@ -104,7 +104,7 @@ features <- variables |>
 
 
 ## Helper functions ====
-# Helper function to make sure all output files named consistently :)
+# Helper function to make sure all output files named consistently
 fn_template <- function(name, extra = "", ext = ".tif") {
     return(paste0(name, "_", RES, "km_", PROJ, extra, ext))
 }
@@ -116,6 +116,7 @@ rast_template <- rast(
     res = c(1000 * RES, 1000 * RES),
     ext = ext(EXT)
 )
+
 sf_use_s2(FALSE) # To avoid intersecting polygon errors. *Workaround*
 setwd(dir_wd)
 ##%##########################################################################%##
@@ -178,7 +179,8 @@ if (pp_hfp) {
     )
 }
 
-## 1.3 LULC ====
+## 1.3 Land Use Exclusion ====
+### 1.3.1 Land Use and Land Cover Exclusion
 if (pp_lulc) {
     print("* Processing LULC *")
     fns_lulc <- variables |>
@@ -228,45 +230,60 @@ if (pp_lulc) {
 
 }
 
+### 1.3.2 Planted trees (Spatial Database on Planted Trees: SDPT)
+# NOTE: loads rasterized planted trees already exported through GEE
+ifile <- file.path(dir_in, pu_fn["plant_sdpt"])
+ofile <- file.path(dir_pu, fn_template("plant_sdpt"))
+args <- gdalwarp_args("near", ifile, ofile, EPSG, RES, EXT)
+system2(gdalwarp_path, args, wait = TRUE)
+
+### 1.3.3 Oil Palm Plantations
+
+
+### 1.3.4 Full exclusion layer
+converted <- rast(file.path(dir_pu, fn_template("lulc_converted")))
+bare <- rast(file.path(dir_pu, fn_template("lulc_bare")))
+sdpt <- rast(file.path(dir_pu, fn_template("plant_sdpt")))
+palm <- rast(file.path(dir_pu, fn_template("plant_palm")))
+
+
 
 ## 1.4 Create restorable land planning units ====
 if (pp_restorable) {
     print("* Processing Restorable Land *")
     # Load preprocessed layers from previous step
-    hfp <- rast(file.path(dir_pu, fn_template("hfp")))
     lulc <- rast(file.path(dir_pu, fn_template("lulc")))
 
-    # Binary reclassification from HFP
-    rcl_intermediate <- tibble(
-        from    = c(0,         hfp_lower, hfp_upper),
-        to      = c(hfp_lower, hfp_upper, 51),
-        becomes = c(0,         1,         0)
-    )
 
-    intermediate_hfp <- classify(hfp, rcl_intermediate) |>
-        writeRaster(file.path(dir_pu, fn_template("hfp_intermediate")),
-                    overwrite = TRUE)
-
-    # Binary reclassification from LULC
-    rcl_lulc <- tibble(
-        from    = c(0,  39, 89,  199),
-        to      = c(39, 89, 199, 200),
-        becomes = c(1,  0,  1,   NA)
-    )
-
-    lulc_exclude <- lulc |>
-        classify(rcl_lulc) |>
-        writeRaster(file.path(dir_pu, fn_template("cop_excludeNotNat")),
-                    overwrite = TRUE)
-
-    intermediate_hfp_lulc_exclude <- intermediate_hfp * lulc_exclude
-
-    # Make sure output name includes the HFP bounds for easy identification
-    out_name <- fn_template(paste0("intermediateHFP_", hfp_lower, "_", hfp_upper, "_excludeNotNat"))
-    writeRaster(intermediate_hfp_lulc_exclude,
-                file.path(dir_pu, out_name),
-                overwrite = TRUE)
 }
+
+
+# Land Use and Land Cover Exclusion
+## Create converted exlcusion layer
+# Exclude crops (40) and built-up (50)
+# NOTE: Done separately due to computing issues
+
+# lulc_converted
+
+
+## Create other exclusion layer
+# Exclude Bare ground (60), water (80, 200), snow/ice (70), moss and lichen (100)
+
+# lulc_other
+
+
+# lulc_exclude = lulc_converted + lulc_other
+
+intermediate_hfp <- rast(file.path(dir_pu, fn_template("hfp_mask")))
+
+restorable_land <- intermediate_hfp * lulc_exclude * sdpt_binary
+
+# TODO: Make output name include the HFP bounds for easy identification
+#   this used to work in old code, but made more general here
+writeRaster(restorable_land,
+            file.path(dir_pu, fn_template("restorable_land")),
+            overwrite = TRUE)
+
 ## 1.5 Process ecoregions ====
 if (pp_ecoregions) {
     print("* Processing ecoregions *")
