@@ -18,12 +18,17 @@
 #   - Set gdalwarp_path
 ##%##########################################################################%##
 
+# Sys.setenv(PATH="/home/science/miniforge3/condabin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin")
+# library(reticulate)
+# use_condaenv("matthew")
+
+
 ##%##########################################################################%##
 # 0.1 MAKE CHANGES HERE ====
 ## Set working directory ====
-dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2"
+dir_wd <- "/home/matthewh@internal.wcmc/projects_active/p09217_RestorationPotentialLayer/global2025"
+# dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2"
 dir_src <- dir_wd
-# dir_wd <- "/home/matthewh@internal.wcmc/projects_active/p09217_RestorationPotentialLayer/global2024_v2"
 ## Set run-id ====
 runid <- ""
 ## Options for choosing what to pre-process ====
@@ -37,6 +42,8 @@ pp_ft_ras <- TRUE
 pp_ft_mask <- TRUE
 pp_cells <- TRUE
 
+
+
 # automatically create needed sub directories
 auto_dir <- TRUE
 
@@ -46,8 +53,8 @@ auto_dir <- TRUE
 #   On windows, probably: C:/OSGeo4W/bin/gdalwarp.exe
 #   On linux, probably already on path :)
 gdalwarp_path <- "gdalwarp"
-# Probably "gdal_calc.py" if system set correctly
-gdalcalc_path <- "gdal_calc"
+# Probably "gdal_calc" if system set correctly
+gdalcalc_path <- " /home/science/miniforge3/envs/matthew/bin/gdal_calc.py"
 ##%##########################################################################%##
 # 0.2 - SET UP ====
 ## Load libraries
@@ -63,13 +70,13 @@ start <- Sys.time()
 
 ## Load dependency scripts ====
 # Load options
-source(file.path(dir_src, "script_tools/v3/1.1-OPTIONS.R"))
+source(file.path(dir_src, "script_tools/1.1-OPTIONS.R"))
 # Load helper functions
 #   - gdalwarp_args()      -- create gdalwarp command
 #   - prepare_ft_r_gdal() -- convert raster features using gdal
 #   - prepare_ft_v_area() -- convert vector features to use polygon area
 #   - prepare_ft_v_raw()  -- convert vector features using vector attribute
-source(file.path(dir_src, "script_tools/v3/0.9-helper_functions.R"))
+source(file.path(dir_src, "script_tools/0.9-helper_functions.R"))
 ##%##########################################################################%##
 # 0.3 Automatically defined variables ====
 # The following variables are automatic, and use the above information
@@ -159,15 +166,13 @@ if (pp_hfp) {
     # Reclassify with gdal_calc.py
     ifile <- file.path(dir_in, pu_fn["hfp"])
     ofile <- file.path(dir_inter, fn_template("hfp_binary"))
-    system2(
+
+    system(glue(
         gdalcalc_path,
-        glue(
-            ' -A "{ifile}"',
-            ' --calc="(A<={hfp_lower})*(A>={hfp_upper})*0+(A>{hfp_lower})*(A<{hfp_upper})*1"',
-            ' --co compress=lzw --overwrite --outfile "{ofile}"'
-        ),
-        wait = TRUE
-    )
+        ' -A "{ifile}"',
+        ' --calc="(A<={hfp_lower})*(A>={hfp_upper})*0+(A>{hfp_lower})*(A<{hfp_upper})*1"',
+        ' --co compress=lzw --overwrite --outfile "{ofile}"'
+    ))
 
     # Reduce resolution with gdalwarp
     ifile <- file.path(dir_inter, fn_template("hfp_binary"))
@@ -193,7 +198,7 @@ if (pp_lulc) {
     for (fn_lulc in names(fns_lulc)) {
         ifile <- file.path(dir_in, pu_fn[fn_lulc])
         ofile <- file.path(dir_inter, fn_template(fn_lulc))
-        args <- gdalwarp_args("average", ifile, ofile, EPSG, RES, EXT)
+        args <- gdalwarp_args("average", ifile, ofile, EPSG, RES, EXT, args = "-wm 2G -co GDAL_CACHEMAX=8000")
         print(args)
         system2(gdalwarp_path, args, wait = TRUE)
     }
