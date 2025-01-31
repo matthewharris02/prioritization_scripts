@@ -185,7 +185,7 @@ if (pp_hfp) {
 }
 
 ## 1.3 Land Use Exclusion ====
-### 1.3.1 Land Use and Land Cover Exclusion
+### 1.3.1 Land Use and Land Cover Processing
 if (pp_lulc) {
     print("* Processing LULC *")
     fns_lulc <- variables |>
@@ -203,26 +203,14 @@ if (pp_lulc) {
         system2(gdalwarp_path, args, wait = TRUE)
     }
 
-    # Create binary converted land raster
-    built <- rast(file.path(dir_inter, fn_template("lulc_built")))
-    crops <- rast(file.path(dir_inter, fn_template("lulc_crop")))
-    converted <- (built + crops) |>
-        classify(data.frame(
-            from    = c(0,  50),
-            to      = c(50, Inf),
-            becomes = c(0,  1)
-        ),
-        right = FALSE # so >= 50
-        )
-    writeRaster(converted, file.path(dir_pu, fn_template("lulc_converted")))
-
-    # Create binary 'other excluded land' raster
+    # Create binary 'other excluded land' (non-converted) raster
     pwater <- rast(file.path(dir_inter, fn_template("lulc_pwater")))
     swater <- rast(file.path(dir_inter, fn_template("lulc_swater")))
     moss <- rast(file.path(dir_inter, fn_template("lulc_moss")))
     snow <- rast(file.path(dir_inter, fn_template("lulc_snow")))
     bare <- rast(file.path(dir_inter, fn_template("lulc_bare")))
 
+    # [Note to self: Faster through R than gdal_calc here]
     lulc_other <- (pwater + swater + moss + snow + bare) |>
         classify(data.frame(
             from    = c(0,  50),
@@ -245,11 +233,25 @@ system2(gdalwarp_path, args, wait = TRUE)
 ### 1.3.3 Oil Palm Plantations
 
 
-### 1.3.4 Full exclusion layer
-converted <- rast(file.path(dir_pu, fn_template("lulc_converted")))
-bare <- rast(file.path(dir_pu, fn_template("lulc_bare")))
-sdpt <- rast(file.path(dir_pu, fn_template("plant_sdpt")))
+### 1.3.4 Converted land raster
+# Converted = built + crop + palm + plantations
+built <- rast(file.path(dir_inter, fn_template("lulc_built")))
+crops <- rast(file.path(dir_inter, fn_template("lulc_crop")))
 palm <- rast(file.path(dir_pu, fn_template("plant_palm")))
+plant <- rast(file.path(dir_pu, fn_template("plant_sdpt")))
+
+# [Note to self: Faster through R than gdal_calc here]
+converted <- (built + crops + palm + plant) |>
+    classify(data.frame(
+        from    = c(0,  50),
+        to      = c(50, Inf), # Inf to catch the weird >100
+        becomes = c(0,  1)
+    ),
+    right = FALSE # so >= 50
+    )
+
+writeRaster(converted, file.path(dir_pu, fn_template("lulc_converted")))
+
 
 
 
