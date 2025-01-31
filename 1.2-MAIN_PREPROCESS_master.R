@@ -1,21 +1,21 @@
 ##%##########################################################################%##
 #       Script for pre-processing for spatial prioritization                   #
-#           V 29.08.2024    Matthew Harris and Vignesh Kamath                  #
+#                    Matthew Harris and Vignesh Kamath                         #
 ##%##########################################################################%##
 # REQUIRED packages:
 #       - sf, terra, tidyverse, arrow, data.table, tictoc, prioritzr, glue
 ##%##########################################################################%##
 # REQUIRED BEFORE STARTING - set OPTIONS (external script):
-#   - Define the 'options' in the '0-OPTIONS.R' script
+#   - Define the 'options' in the '1.1-OPTIONS.R' script
 #   - This is the parameters of the solution (e.g., resolution, extent,
-#       projection) that are shared amongst 0.1, 0.2 and 0.3
+#       projection) that are shared amongst 1.2, 1.3 and 2
 ##%##########################################################################%##
 # ENSURE CORRECT SETTINGS in section 0.1
 #   - Set the working directory in this script
-#   - This define what parts of the script need to be ran
+#   - This defines what parts of the script need to be ran
 #   - Set a 'runid' in order to distinguish between multiple runs
 #       if it is the same RES
-#   - Set gdalwarp_path
+#   - Set gdalwarp_path and gdalcalc_path
 ##%##########################################################################%##
 
 # Sys.setenv(PATH="/home/science/miniforge3/condabin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin")
