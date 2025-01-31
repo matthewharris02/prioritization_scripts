@@ -30,5 +30,6 @@ while read -r line; do
     gdal_calc -A "${dir_res}/${newName_res}" --calc="A/${scale_factor}" --NoDataValue=-128 --outfile="${dir_area}/${newName_area}" --co compress=lzw --overwrite
 done <"${dirBase}/files.txt"
 
-ls -l "${dir_area}/*.tif" > "${dir_area}/tiff_list.txt"
-gdal_merge -o "${dirOut}/full_oil_palm_5km_area.tif" --optfile "${dir_area}/tiff_list.txt"
+# MANUALLY GET tiff_list.txt
+# MANUALLY merge with gdal_merge and --optfile option
+# gdal_merge -o "${dirOut}/full_oil_palm_5km_area.tif" --optfile "${dir_area}/tiff_list.txt"
