@@ -231,7 +231,11 @@ args <- gdalwarp_args("near", ifile, ofile, EPSG, RES, EXT)
 system2(gdalwarp_path, args, wait = TRUE)
 
 ### 1.3.3 Oil Palm Plantations
-
+# NOTE: relies on pre-processing in 0.2 and 0.3
+ifile <- file.path(dir_in, pu_fn["plant_palm"])
+ofile <- file.path(dir_pu, fn_template("plant_sdpt"))
+args <- gdalwarp_args("near", ifile, ofile, EPSG, RES, EXT)
+system2(gdalwarp_path, args, wait = TRUE)
 
 ### 1.3.4 Converted land raster
 # Converted = built + crop + palm + plantations
