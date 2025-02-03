@@ -399,7 +399,7 @@ if (pp_ft_ras) {
 
 
     for (ft in names(ft_fn_r)) {
-        print(paste0("Processing: ", fy, " ..."))
+        print(paste0("Processing: ", ft, " ..."))
         ifile <- file.path(dir_in, ft_fn_r[ft])
         ofile <- file.path(dir_features, fn_template(ft))
         method <- ft_method[ft]
