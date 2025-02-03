@@ -233,19 +233,27 @@ if (pp_lulc) {
 # NOTE: loads rasterized planted trees already exported through GEE
 # This ensures that it is the same extent and resolution as all the rest
 #   Nearest-neighbour because it is already 5km, and it is just alignment needed
-ifile <- file.path(dir_in, pu_fn["plant_sdpt"])
-ofile <- file.path(dir_pu, fn_template("plant_sdpt"))
-args <- gdalwarp_args("near", ifile, ofile, EPSG, RES, EXT)
-system2(gdalwarp_path, args, wait = TRUE)
+#   Need to multiply by 100 as this is 0-1 but copernicus is 0-100
+plant <- (rast(file.path(dir_in, pu_fn["plant_sdpt"])) * 100) |> 
+    classify(cbind(0, NA)) |> 
+    project(rast_template) |> 
+    writeRaster(file.path(dir_pu, fn_template("plant_sdpt")), overwrite = TRUE)
 
 ### 1.3.3 Oil Palm Plantations
 # NOTE: relies on pre-processing in 0.2 and 0.3
 # This ensures that it is the same extent and resolution as all the rest
 #   Nearest-neighbour because it is already 5km, and it is just alignment needed
+#   Need to multiply by 100 as this is 0-1 but copernicus is 0-100
 ifile <- file.path(dir_in, pu_fn["plant_palm"])
-ofile <- file.path(dir_pu, fn_template("plant_sdpt"))
+ofile <- file.path(dir_pu, fn_template("plant_palm"))
 args <- gdalwarp_args("near", ifile, ofile, EPSG, RES, EXT)
 system2(gdalwarp_path, args, wait = TRUE)
+
+
+palm <- (rast(file.path(dir_in, pu_fn["plant_palm"])) * 100) |> 
+    classify(cbind(0, NA)) |> 
+    project(rast_template) |> 
+    writeRaster(file.path(dir_pu, fn_template("plant_palm")), overwrite = TRUE)
 
 ### 1.3.4 Converted land raster
 # Converted = built + crop + palm + plantations
