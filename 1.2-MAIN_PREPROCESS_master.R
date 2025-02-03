@@ -225,6 +225,8 @@ if (pp_lulc) {
 
 ### 1.3.2 Planted trees (Spatial Database on Planted Trees: SDPT)
 # NOTE: loads rasterized planted trees already exported through GEE
+# This ensures that it is the same extent and resolution as all the rest
+#   Nearest-neighbour because it is already 5km, and it is just alignment needed
 ifile <- file.path(dir_in, pu_fn["plant_sdpt"])
 ofile <- file.path(dir_pu, fn_template("plant_sdpt"))
 args <- gdalwarp_args("near", ifile, ofile, EPSG, RES, EXT)
@@ -232,6 +234,8 @@ system2(gdalwarp_path, args, wait = TRUE)
 
 ### 1.3.3 Oil Palm Plantations
 # NOTE: relies on pre-processing in 0.2 and 0.3
+# This ensures that it is the same extent and resolution as all the rest
+#   Nearest-neighbour because it is already 5km, and it is just alignment needed
 ifile <- file.path(dir_in, pu_fn["plant_palm"])
 ofile <- file.path(dir_pu, fn_template("plant_sdpt"))
 args <- gdalwarp_args("near", ifile, ofile, EPSG, RES, EXT)
