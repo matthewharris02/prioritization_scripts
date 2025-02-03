@@ -26,7 +26,8 @@
 ##%##########################################################################%##
 # 0.1 MAKE CHANGES HERE ====
 ## Set working directory ====
-dir_wd <- "/home/matthewh@internal.wcmc/projects_active/p09217_RestorationPotentialLayer/global2025"
+dir_wd <- "/mnt/sda/MH_restoration"
+# dir_wd <- "/home/matthewh@internal.wcmc/projects_active/p09217_RestorationPotentialLayer/global2025"
 # dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2"
 dir_src <- dir_wd
 ## Set run-id ====
@@ -54,7 +55,8 @@ auto_dir <- TRUE
 #   On linux, probably already on path :)
 gdalwarp_path <- "gdalwarp"
 # Probably "gdal_calc" if system set correctly
-gdalcalc_path <- " /home/science/miniforge3/envs/matthew/bin/gdal_calc.py"
+# gdalcalc_path <- " /home/science/miniforge3/envs/matthew/bin/gdal_calc.py"
+gdalcalc_path <- "gdal_calc.py"
 ##%##########################################################################%##
 # 0.2 - SET UP ====
 ## Load libraries
