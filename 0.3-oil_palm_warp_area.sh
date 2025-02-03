@@ -33,3 +33,4 @@ done <"${dirBase}/files.txt"
 # MANUALLY GET tiff_list.txt
 # MANUALLY merge with gdal_merge and --optfile option
 # gdal_merge -o "${dirOut}/full_oil_palm_5km_area.tif" --optfile "${dir_area}/tiff_list.txt"
+# MANUALLY CONVERT TO 0-100 not 0-1
