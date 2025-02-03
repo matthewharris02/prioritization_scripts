@@ -26,14 +26,9 @@
 ##%##########################################################################%##
 # 0.1 MAKE CHANGES HERE ====
 ## Set working directory ====
-<<<<<<< HEAD
-# dir_wd <- "/home/matthewh@internal.wcmc/projects_active/p09217_RestorationPotentialLayer/global2025"
-dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2"
-=======
 dir_wd <- "/mnt/sda/MH_restoration"
 # dir_wd <- "/home/matthewh@internal.wcmc/projects_active/p09217_RestorationPotentialLayer/global2025"
 # dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2"
->>>>>>> ffefafa300a0c92447a5fbe7f307f7aa1b9a6778
 dir_src <- dir_wd
 dir_src <- "C:/Users/matthewh/LOCAL/projects_local/restoration_scripts_git"
 ## Set run-id ====
@@ -62,11 +57,8 @@ auto_dir <- TRUE
 gdalwarp_path <- "gdalwarp"
 # Probably "gdal_calc" if system set correctly
 # gdalcalc_path <- " /home/science/miniforge3/envs/matthew/bin/gdal_calc.py"
-<<<<<<< HEAD
 gdalcalc_path <- "gdal_calc"
-=======
-gdalcalc_path <- "gdal_calc.py"
->>>>>>> ffefafa300a0c92447a5fbe7f307f7aa1b9a6778
+# gdalcalc_path <- "gdal_calc.py"
 ##%##########################################################################%##
 # 0.2 - SET UP ====
 ## Load libraries
