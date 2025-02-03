@@ -26,9 +26,10 @@
 ##%##########################################################################%##
 # 0.1 MAKE CHANGES HERE ====
 ## Set working directory ====
-dir_wd <- "/home/matthewh@internal.wcmc/projects_active/p09217_RestorationPotentialLayer/global2025"
-# dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2"
+# dir_wd <- "/home/matthewh@internal.wcmc/projects_active/p09217_RestorationPotentialLayer/global2025"
+dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2"
 dir_src <- dir_wd
+dir_src <- "C:/Users/matthewh/LOCAL/projects_local/restoration_scripts_git"
 ## Set run-id ====
 runid <- ""
 ## Options for choosing what to pre-process ====
@@ -54,7 +55,8 @@ auto_dir <- TRUE
 #   On linux, probably already on path :)
 gdalwarp_path <- "gdalwarp"
 # Probably "gdal_calc" if system set correctly
-gdalcalc_path <- " /home/science/miniforge3/envs/matthew/bin/gdal_calc.py"
+# gdalcalc_path <- " /home/science/miniforge3/envs/matthew/bin/gdal_calc.py"
+gdalcalc_path <- "gdal_calc"
 ##%##########################################################################%##
 # 0.2 - SET UP ====
 ## Load libraries
@@ -70,13 +72,15 @@ start <- Sys.time()
 
 ## Load dependency scripts ====
 # Load options
-source(file.path(dir_src, "script_tools/1.1-OPTIONS.R"))
+# source(file.path(dir_src, "script_tools/1.1-OPTIONS.R"))
+source(file.path(dir_src, "1.1-OPTIONS.R"))
 # Load helper functions
 #   - gdalwarp_args()      -- create gdalwarp command
 #   - prepare_ft_r_gdal() -- convert raster features using gdal
 #   - prepare_ft_v_area() -- convert vector features to use polygon area
 #   - prepare_ft_v_raw()  -- convert vector features using vector attribute
-source(file.path(dir_src, "script_tools/0.9-helper_functions.R"))
+# source(file.path(dir_src, "script_tools/0.9-helper_functions.R"))
+source(file.path(dir_src, "0.9-helper_functions.R"))
 ##%##########################################################################%##
 # 0.3 Automatically defined variables ====
 # The following variables are automatic, and use the above information
