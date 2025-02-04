@@ -189,10 +189,13 @@ feat_ft <- feat_master
 if (opt_ecoregions) {
     # Prepare ecoregion features
 
-    feat_ecoregions <- grid_cell |>
-        select(ecoregions) |>
-        arrange(ecoregions) |>
-        filter(!is.na(ecoregions)) |>
+    ecoregions_data <- read_csv(file.path(dir_pu, "global_ecoregions_moll.csv"))
+
+    feat_ecoregions <- ecoregions_data |>
+        filter(!is.na(realised_extent)) |>
+        select(ECO_ID) |>
+        arrange(ECO_ID) |>
+        filter(!is.na(ECO_ID)) |>
         distinct() |>
         unlist() |>
         as.character()
@@ -223,6 +226,7 @@ if (opt_ecoregions) {
     rij_ecoregions <- grid_cell |>
         select(id, ecoregions) |>
         filter(!is.na(ecoregions)) |>
+        filter(ecoregions %in% feat_ecoregions) |> 
         mutate(
             ecoregions = as.character(ecoregions), # Convert to text to match feat_master
             amount = 1
@@ -245,7 +249,6 @@ if (opt_ecoregions) {
     ecoregions_data <- read_csv(file.path(dir_pu, "global_ecoregions_moll.csv"))
 
     targets_ecoregions <- ecoregions_data |>
-        filter(ECO_ID %in% feat_ecoregions) |>
         filter(!is.na(realised_extent)) |>
         mutate(
             target = (1 - remnant_proportion) |>
