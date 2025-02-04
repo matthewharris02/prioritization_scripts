@@ -6,7 +6,8 @@
 ##%##########################################################################%##
 # 0.1 MAKE CHANGES HERE ====
 ## Set working directory ====
-dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2"
+dir_wd <- "/mnt/sda/MH_restoration"
+# dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2"
 dir_src <- dir_wd
 # dir_wd <- "/home/matthewh@internal.wcmc/projects_active/p09217_RestorationPotentialLayer/global2024_v2"
 ## Set run-id ====
@@ -19,7 +20,7 @@ library(terra)
 library(tidyverse)
 
 # Load options script
-source(file.path(dir_src, "script_tools/v3/1.1-OPTIONS.R"))
+source(file.path(dir_src, "script_tools/1.1-OPTIONS.R"))
 
 ##%##########################################################################%##
 # 0.3 Automatically defined variables ====
