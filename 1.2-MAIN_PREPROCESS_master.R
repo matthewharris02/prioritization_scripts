@@ -251,8 +251,9 @@ system2(gdalwarp_path, args, wait = TRUE)
 
 
 palm <- (rast(file.path(dir_in, pu_fn["plant_palm"])) * 100) |> 
-    classify(cbind(0, NA)) |> 
+    classify(cbind(-Inf, 0, 0)) |> # Remove weird negatives
     project(rast_template) |> 
+    classify(cbind(NA, 0)) |> # necessary to make the sum below work
     writeRaster(file.path(dir_pu, fn_template("plant_palm")), overwrite = TRUE)
 
 ### 1.3.4 Converted land raster
