@@ -295,7 +295,7 @@ if (pp_restorable) {
     lulc_converted <- rast(file.path(dir_pu, fn_template("lulc_converted")))
     hfp_intermediate <- rast(file.path(dir_pu, fn_template("hfp_mask")))
     restorable <- (lulc_other + lulc_converted) |>
-        mask(hfp_intermediate, maskvalue=0, updatevalue=1) |>
+        mask(hfp_intermediate, maskvalue = 0, updatevalue = 1) |>
         classify(cbind(1, Inf, 1)) |> 
         writeRaster(file.path(dir_pu, fn_template("restorable_land")), overwrite = TRUE)
     
