@@ -291,38 +291,17 @@ writeRaster(converted, file.path(dir_pu, fn_template("lulc_converted")), overwri
 ## 1.4 Create restorable land planning units ====
 if (pp_restorable) {
     print("* Processing Restorable Land *")
-    # Load preprocessed layers from previous step
-    lulc <- rast(file.path(dir_pu, fn_template("lulc")))
-
-
+    lulc_other <- rast(file.path(dir_pu, fn_template("lulc_other")))
+    lulc_converted <- rast(file.path(dir_pu, fn_template("lulc_converted")))
+    hfp_intermediate <- rast(file.path(dir_pu, fn_template("hfp_mask")))
+    restorable <- (lulc_other + lulc_converted) |>
+        mask(hfp_intermediate, maskvalue=0, updatevalue=1) |>
+        classify(cbind(1, Inf, 1)) |> 
+        writeRaster(file.path(dir_pu, fn_template("restorable_land")), overwrite = TRUE)
+    
+    # TODO: Make output name include the HFP bounds for easy identification
+    #   this used to work in old code, but made more general here
 }
-
-
-# Land Use and Land Cover Exclusion
-## Create converted exlcusion layer
-# Exclude crops (40) and built-up (50)
-# NOTE: Done separately due to computing issues
-
-# lulc_converted
-
-
-## Create other exclusion layer
-# Exclude Bare ground (60), water (80, 200), snow/ice (70), moss and lichen (100)
-
-# lulc_other
-
-
-# lulc_exclude = lulc_converted + lulc_other
-
-intermediate_hfp <- rast(file.path(dir_pu, fn_template("hfp_mask")))
-
-restorable_land <- intermediate_hfp * lulc_exclude * sdpt_binary
-
-# TODO: Make output name include the HFP bounds for easy identification
-#   this used to work in old code, but made more general here
-writeRaster(restorable_land,
-            file.path(dir_pu, fn_template("restorable_land")),
-            overwrite = TRUE)
 
 ## 1.5 Process ecoregions ====
 if (pp_ecoregions) {
