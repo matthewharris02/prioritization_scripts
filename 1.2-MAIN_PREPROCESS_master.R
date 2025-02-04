@@ -308,8 +308,6 @@ if (pp_ecoregions) {
     print("* Processing ecoregions *")
     # Load LULC not-natural layer as 'modified' land map
     land <- rast(file.path(dir_pu, fn_template("lulc_converted")))
-    modified_mask <- land |>
-        classify(cbind(0, NA))
 
     ecoregions <- st_read(file.path(dir_in, pu_fn["ecoregions2017"]))
     ecoregions_rast <- ecoregions |>
@@ -319,7 +317,7 @@ if (pp_ecoregions) {
         writeRaster(file.path(dir_pu, fn_template("ecoregions")),
                     overwrite = TRUE)
 
-    remnant <- ecoregions_rast * modified_mask
+    remnant <- mask(ecoregions_rast, land, maskvalue = 1, updatevalue = NA)
     writeRaster(remnant,
                 file.path(dir_pu, fn_template("ecoregionsremnant")),
                 overwrite = TRUE)
