@@ -273,7 +273,7 @@ converted <- (built + crops + palm + plant) |>
     right = FALSE # so >= 50
     )
 
-writeRaster(converted, file.path(dir_pu, fn_template("lulc_converted")))
+writeRaster(converted, file.path(dir_pu, fn_template("lulc_converted")), overwrite = TRUE)
 
 
 
