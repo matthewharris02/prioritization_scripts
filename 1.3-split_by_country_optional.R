@@ -57,14 +57,14 @@ for (ft in ft_split) {
         select(id, ISONUM, all_of(ft)) |>
         collect() |> # Pull data into R before applying window function
         mutate(across(all_of(ft),
-                      ~scales::rescale(.x,
-                                       to = c(0,1),
-                                       from = c(0, max(.x, na.rm = TRUE))
-                                       )
-        ))|>
+            ~scales::rescale(.x,
+                to = c(0,1),
+                from = c(0, max(.x, na.rm = TRUE))
+            )
+        )) |>
         mutate(
             species = paste0(ft, "_", ISONUM)
-            ) |>
+        ) |>
         rename_with(~c(ft = "amount"), .cols = all_of(ft)) |>
         select(id, species, amount) |>
         filter(!is.na(amount))
@@ -74,7 +74,7 @@ for (ft in ft_split) {
         distinct(species) |>
         mutate(
             column_id = row_number() + last_column_id
-            )
+        )
 
 
     # Join the mapping dataframe to the long dataframe
