@@ -275,8 +275,18 @@ converted <- (built + crops + palm + plant) |>
 
 writeRaster(converted, file.path(dir_pu, fn_template("lulc_converted")), overwrite = TRUE)
 
-
-
+# TESTS
+# built_crop <- (built + crops) |>
+#     classify(data.frame(
+#         from    = c(0,  50),
+#         to      = c(50, Inf), # Inf to catch the weird >100
+#         becomes = c(0,  1)
+#     ),
+#     right = FALSE # so >= 50
+#     )
+# 
+# writeRaster(built_crop, file.path(dir_pu, fn_template("lulc_converted_noPlant")), overwrite = TRUE)
+# END TEST
 
 ## 1.4 Create restorable land planning units ====
 if (pp_restorable) {
