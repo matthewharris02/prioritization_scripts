@@ -234,9 +234,9 @@ if (pp_lulc) {
 # This ensures that it is the same extent and resolution as all the rest
 #   Nearest-neighbour because it is already 5km, and it is just alignment needed
 #   Need to multiply by 100 as this is 0-1 but copernicus is 0-100
-plant <- (rast(file.path(dir_in, pu_fn["plant_sdpt"])) * 100) |> 
-    classify(cbind(NA, 0)) |> 
-    project(rast_template) |> 
+plant <- (rast(file.path(dir_in, pu_fn["plant_sdpt"])) * 100) |>
+    classify(cbind(NA, 0)) |>
+    project(rast_template) |>
     writeRaster(file.path(dir_pu, fn_template("plant_sdpt")), overwrite = TRUE)
 
 ### 1.3.3 Oil Palm Plantations
@@ -250,9 +250,9 @@ args <- gdalwarp_args("near", ifile, ofile, EPSG, RES, EXT)
 system2(gdalwarp_path, args, wait = TRUE)
 
 
-palm <- (rast(file.path(dir_in, pu_fn["plant_palm"])) * 100) |> 
+palm <- (rast(file.path(dir_in, pu_fn["plant_palm"])) * 100) |>
     classify(cbind(-Inf, 0, 0)) |> # Remove weird negatives
-    project(rast_template) |> 
+    project(rast_template) |>
     classify(cbind(NA, 0)) |> # necessary to make the sum below work
     writeRaster(file.path(dir_pu, fn_template("plant_palm")), overwrite = TRUE)
 
@@ -298,7 +298,7 @@ if (pp_restorable) {
         mask(hfp_intermediate, maskvalue = 0, updatevalue = 1) |>
         classify(cbind(1, Inf, 1)) |> 
         writeRaster(file.path(dir_pu, fn_template("restorable_land")), overwrite = TRUE)
-    
+
     # TODO: Make output name include the HFP bounds for easy identification
     #   this used to work in old code, but made more general here
 }
