@@ -235,7 +235,7 @@ if (pp_lulc) {
 #   Nearest-neighbour because it is already 5km, and it is just alignment needed
 #   Need to multiply by 100 as this is 0-1 but copernicus is 0-100
 plant <- (rast(file.path(dir_in, pu_fn["plant_sdpt"])) * 100) |> 
-    classify(cbind(0, NA)) |> 
+    classify(cbind(NA, 0)) |> 
     project(rast_template) |> 
     writeRaster(file.path(dir_pu, fn_template("plant_sdpt")), overwrite = TRUE)
 
