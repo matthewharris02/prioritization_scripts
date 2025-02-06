@@ -436,7 +436,7 @@ r <- rast(
 
 writeRaster(r,
             file.path(dir_output, glue::glue("solution_full_", info_str, ".tif")),
-            overwrite = T)
+            overwrite = TRUE)
 
 times_df <- write.csv(solution_details,
                       file.path(dir_logs, glue::glue("details_", info_str, ".csv")))
