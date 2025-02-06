@@ -432,7 +432,7 @@ if (pp_ft_mask) {
 
     ft_list |>
         map(~rast(.x)) |>
-        map(~mask(.x, pu_mask, maskvalue = c(0, NA))) |>
+        map(~mask(.x, pu_mask, maskvalue = c(1, NA))) |>
         walk2(
             .y = file_names,
             ~writeRaster(.x, file.path(dir_features, paste0(.y, "_mask", ".tif")), overwrite = TRUE)
@@ -450,7 +450,7 @@ if (pp_cells) {
         map(~rast(.x)) |>
         rast()
 
-    hfp <- rast(file.path(dir_pu, fn_template("hfp_mask")))
+    pu <- rast(file.path(dir_pu, fn_template("restorable_land")))
     ecoregions <- rast(file.path(dir_pu, fn_template("ecoregions")))
 
     ft_present <- list.files(dir_features,
@@ -464,14 +464,14 @@ if (pp_cells) {
         map(~rast(.x)) |>
         rast()
 
-    all_rast <- c(pu_rast, hfp, ecoregions, ft_rast)
-    names(all_rast) <- c("ISONUM", "lulc_converted", "lulc_other", "hfp", "ecoregions", ft_names)
+    all_rast <- c(pu_rast, pu, ecoregions, ft_rast)
+    names(all_rast) <- c("ISONUM", "lulc_converted", "lulc_other", "pu", "ecoregions", ft_names)
     pu_vals <- as.data.frame(all_rast,
                              xy = TRUE,
                              na.rm = FALSE) |>
         setDT()
 
-    pu_vals <- pu_vals[!is.na(ISONUM), ][hfp == 1, ]
+    pu_vals <- pu_vals[!is.na(ISONUM), ][pu == 0, ] # Filter our non 'restorable land'
 
 
     pu_vals <- pu_vals[, id := 1:.N]
