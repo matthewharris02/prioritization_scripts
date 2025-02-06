@@ -229,14 +229,14 @@ if (pp_lulc) {
 
 }
 
-### 1.3.2 Planted trees (Spatial Database on Planted Trees: SDPT)
-# NOTE: loads rasterized planted trees already exported through GEE
+### 1.3.2 Planted trees from Xiao (2024) and Xiao et al. (2024)
+# NOTE: loads planted trees already exported through GEE at 1km mean
 # This ensures that it is the same extent and resolution as all the rest
-#   Nearest-neighbour because it is already 5km, and it is just alignment needed
+# It had to be exported at 1km due to processing limitations
 #   Need to multiply by 100 as this is 0-1 but copernicus is 0-100
-plant <- (rast(file.path(dir_in, pu_fn["plant_sdpt"])) * 100) |>
+plant <- (rast(file.path(dir_in, pu_fn["plant_forests"])) * 100) |>
     classify(cbind(NA, 0)) |>
-    project(rast_template) |>
+    project(rast_template, method = "average") |>
     writeRaster(file.path(dir_pu, fn_template("plant_sdpt")), overwrite = TRUE)
 
 ### 1.3.3 Oil Palm Plantations
