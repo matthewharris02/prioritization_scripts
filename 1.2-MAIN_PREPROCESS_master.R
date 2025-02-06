@@ -418,7 +418,7 @@ if (pp_ft_ras) {
 
 if (pp_ft_mask) {
     print("Processing features: masking ====")
-    pu_mask <- rast(file.path(dir_pu, fn_template(paste0("intermediateHFP_", hfp_lower, "_", hfp_upper, "_excludeNotNat"))))
+    pu_mask <- rast(file.path(dir_pu, fn_template("restorable_land")))
 
 
     ft_list <- list.files(dir_features,
