@@ -254,7 +254,8 @@ if (opt_ecoregions) {
             target = (1 - remnant_proportion) |>
                 scales::rescale(
                     from = c(0.20, 0.75),
-                    to   = c(0.10, 0.30)),
+                    to   = c(0.10, 0.30)
+                ),
             target = case_when(
                 target >= 0.3 ~ 0.3,
                 target < 0.3 & target > 0.1 ~ target,
@@ -334,8 +335,8 @@ for (i in 1:length(budgets)) {
 
     # START LOGGING
     file <- file(
-        file.path(dir_logs, str_glue("log{i}_", {info_str}, ".txt")),
-        open = "wt")
+                 file.path(dir_logs, str_glue("log{i}_", {info_str}, ".txt")),
+                 open = "wt")
     sink(file, append = TRUE)
     sink(file, append = TRUE, type = "message")
 
@@ -353,8 +354,8 @@ for (i in 1:length(budgets)) {
         # Format previous solution for locked-in constraint
         prev <- solutions[[i - 1]]
         prev_mod <- cbind(prev[, 1:2],
-                           sapply(prev[, 3],
-                                  FUN = \(x) if_else(x == 1, TRUE, FALSE)))
+                          sapply(prev[, 3],
+                                 FUN = \(x) if_else(x == 1, TRUE, FALSE)))
         # Update problem
         p2 <- p |>
             add_min_shortfall_objective(budget = b_cells) |>
@@ -368,7 +369,7 @@ for (i in 1:length(budgets)) {
                 gap = opt_gap,
                 threads = opt_threads,
                 verbose = TRUE
-                )
+            )
     } else if (solver == "lp") {
         p2 <- p2 |>
             add_lpsymphony_solver(
@@ -426,14 +427,16 @@ combined_solution <- solutions |>
     write_csv(file.path(dir_output, glue::glue("solution_full_", info_str, ".csv")))
 
 ## 7.2 Convert matrix to raster ====
-r <- rast(combined_solution[, c("x", "y", "final")],
-          crs = crs(EPSG),
-          extent = ext(rast_template)
+r <- rast(
+    combined_solution[, c("x", "y", "final")],
+    crs = crs(EPSG),
+    extent = ext(rast_template
+    )
 )
 
 writeRaster(r,
             file.path(dir_output, glue::glue("solution_full_", info_str, ".tif")),
-            overwrite = T)
+            overwrite = TRUE)
 
 times_df <- write.csv(solution_details,
                       file.path(dir_logs, glue::glue("details_", info_str, ".csv")))

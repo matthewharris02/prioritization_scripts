@@ -237,7 +237,7 @@ if (pp_lulc) {
 plant <- (rast(file.path(dir_in, pu_fn["plant_forests"])) * 100) |>
     classify(cbind(NA, 0)) |>
     project(rast_template, method = "average") |>
-    writeRaster(file.path(dir_pu, fn_template("plant_sdpt")), overwrite = TRUE)
+    writeRaster(file.path(dir_pu, fn_template("plant_forests")), overwrite = TRUE)
 
 ### 1.3.3 Oil Palm Plantations
 # NOTE: relies on pre-processing in 0.2 and 0.3
@@ -261,7 +261,7 @@ palm <- (rast(file.path(dir_in, pu_fn["plant_palm"])) * 100) |>
 built <- rast(file.path(dir_inter, fn_template("lulc_built")))
 crops <- rast(file.path(dir_inter, fn_template("lulc_crop")))
 palm <- rast(file.path(dir_pu, fn_template("plant_palm")))
-plant <- rast(file.path(dir_pu, fn_template("plant_sdpt")))
+plant <- rast(file.path(dir_pu, fn_template("plant_forests")))
 
 # [Note to self: Faster through R than gdal_calc here]
 converted <- (built + crops + palm + plant) |>
