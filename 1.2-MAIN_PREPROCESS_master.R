@@ -445,13 +445,13 @@ if (pp_ft_mask) {
 
 if (pp_cells) {
     print("* Creating grid cells *")
-    pu_rast <- c("countries", "lulc") |>
+    pu_rast <- c("countries", "lulc_converted", "lulc_other") |>
         map(~file.path(dir_pu, fn_template(.x))) |>
         map(~rast(.x)) |>
         rast()
 
-    hfp_int <- rast(file.path(dir_pu, str_glue("intermediateHFP_{hfp_lower}_{hfp_upper}_excludeNotNat_{RES}km_{PROJ}.tif")))
-    ecoregions <- rast(file.path(dir_pu, fn_template("ecoregions_withIceRock")))
+    hfp <- rast(file.path(dir_pu, fn_template("hfp_mask")))
+    ecoregions <- rast(file.path(dir_pu, fn_template("ecoregions")))
 
     ft_present <- list.files(dir_features,
                              pattern = "_mask.tif$",
@@ -464,8 +464,8 @@ if (pp_cells) {
         map(~rast(.x)) |>
         rast()
 
-    all_rast <- c(pu_rast, hfp_int, ecoregions, ft_rast)
-    names(all_rast) <- c("ISONUM", "lulc", "hfp", "ecoregions", ft_names)
+    all_rast <- c(pu_rast, hfp, ecoregions, ft_rast)
+    names(all_rast) <- c("ISONUM", "lulc_converted", "lulc_other", "hfp", "ecoregions", ft_names)
     pu_vals <- as.data.frame(all_rast,
                              xy = TRUE,
                              na.rm = FALSE) |>
