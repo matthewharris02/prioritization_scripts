@@ -435,7 +435,7 @@ if (pp_ft_mask) {
         map(~mask(.x, pu_mask, maskvalue = c(0, NA))) |>
         walk2(
             .y = file_names,
-            ~writeRaster(.x, file.path(dir_features, paste0(.y, "_mask", extra, ".tif")), overwrite = TRUE)
+            ~writeRaster(.x, file.path(dir_features, paste0(.y, "_mask", ".tif")), overwrite = TRUE)
         )
 
 }
