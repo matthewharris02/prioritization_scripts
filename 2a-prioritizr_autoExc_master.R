@@ -19,7 +19,8 @@ library(terra)
 
 # 1. OPTIONS and set-up ====
 ## 1.1 EDITABLE options ====
-dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2"
+dir_wd <- "/mnt/sda/MH_restoration"
+# dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2"
 dir_src <- dir_wd
 ### Prioritzr-related options ====
 write_each <- TRUE    # If TRUE, writes solution for each budget
@@ -39,7 +40,7 @@ drop_feature <-  c("ft_usefulplants")
 
 ## 1.2 Shared options ====
 # Load options file to share options with pre-processing
-source(file.path(dir_src, "script_tools/v3/1.1-OPTIONS.R"))
+source(file.path(dir_src, "script_tools/1.1-OPTIONS.R"))
 
 # 1.3 Load package for solver ====
 if (solver == "cbc") {
@@ -300,6 +301,7 @@ p <- problem(
     add_relative_targets(targets)
 
 budgets <- seq(0.05, 1, 0.05)
+budgets <- seq(0.1, 1, 0.1)
 solutions <- list() # Solutions for each budget
 times <- list() # Problem solving times
 
