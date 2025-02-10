@@ -287,7 +287,7 @@ writeRaster(converted, file.path(dir_pu, fn_template("lulc_converted")), overwri
 #     ),
 #     right = FALSE # so >= 50
 #     )
-# 
+#
 # writeRaster(built_crop, file.path(dir_pu, fn_template("lulc_converted_noPlant")), overwrite = TRUE)
 # END TEST
 
@@ -300,7 +300,7 @@ if (pp_restorable) {
     # Include/restorable = 1, exclude = 0
     restorable <- (lulc_other + lulc_converted) |>
         mask(hfp_intermediate, maskvalue = 0, updatevalue = 1) |>
-        classify(cbind(1, Inf, 1)) |> 
+        classify(cbind(1, Inf, 1)) |>
         writeRaster(file.path(dir_pu, fn_template("restorable_land")), overwrite = TRUE)
 
     # TODO: Make output name include the HFP bounds for easy identification
