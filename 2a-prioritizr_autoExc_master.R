@@ -381,7 +381,8 @@ for (i in 1:length(budgets)) {
     # Solve problem (and time it)
     print("Solving...")
     start <- Sys.time()
-    s <- solve(p2, run_checks = FALSE)
+    s <- try(solve(p2, run_checks = FALSE))
+    if (inherits(s, "try-error")) { print("FAILED")}
     end <- Sys.time()
 
 
