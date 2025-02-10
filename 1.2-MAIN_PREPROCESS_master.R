@@ -176,7 +176,7 @@ if (pp_hfp) {
     system(glue(
         gdalcalc_path,
         ' -A "{ifile}"',
-        ' --calc="(A<={hfp_lower})*(A>={hfp_upper})*0+(A>{hfp_lower})*(A<{hfp_upper})*1"',
+        ' --calc="(A<={hfp_lower})*(A>{hfp_upper})*0+(A>{hfp_lower})*(A<={hfp_upper})*1"',
         ' --co compress=lzw --overwrite --outfile "{ofile}"'
     ))
 
