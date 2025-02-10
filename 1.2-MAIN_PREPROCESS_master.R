@@ -173,6 +173,7 @@ if (pp_hfp) {
     ifile <- file.path(dir_in, pu_fn["hfp"])
     ofile <- file.path(dir_inter, fn_template("hfp_binary"))
 
+    # Include/restorable = 1, exclude = 0
     system(glue(
         gdalcalc_path,
         ' -A "{ifile}"',
@@ -217,11 +218,12 @@ if (pp_lulc) {
     bare <- rast(file.path(dir_inter, fn_template("lulc_bare")))
 
     # [Note to self: Faster through R than gdal_calc here]
+    # Include/restorable = 1, exclude = 0
     lulc_other <- (pwater + swater + moss + snow + bare) |>
         classify(data.frame(
             from    = c(0,  50),
             to      = c(50, Inf),
-            becomes = c(0,  1)
+            becomes = c(1,  0)
         ),
         right = FALSE # so >= 50
         )
@@ -264,11 +266,12 @@ palm <- rast(file.path(dir_pu, fn_template("plant_palm")))
 plant <- rast(file.path(dir_pu, fn_template("plant_forests")))
 
 # [Note to self: Faster through R than gdal_calc here]
+# Include/restorable = 1, exclude = 0
 converted <- (built + crops + palm + plant) |>
     classify(data.frame(
         from    = c(0,  50),
         to      = c(50, Inf), # Inf to catch the weird >100
-        becomes = c(0,  1)
+        becomes = c(1,  0)
     ),
     right = FALSE # so >= 50
     )
@@ -280,7 +283,7 @@ writeRaster(converted, file.path(dir_pu, fn_template("lulc_converted")), overwri
 #     classify(data.frame(
 #         from    = c(0,  50),
 #         to      = c(50, Inf), # Inf to catch the weird >100
-#         becomes = c(0,  1)
+#         becomes = c(1,  0)
 #     ),
 #     right = FALSE # so >= 50
 #     )
@@ -294,6 +297,7 @@ if (pp_restorable) {
     lulc_other <- rast(file.path(dir_pu, fn_template("lulc_other")))
     lulc_converted <- rast(file.path(dir_pu, fn_template("lulc_converted")))
     hfp_intermediate <- rast(file.path(dir_pu, fn_template("hfp_mask")))
+    # Include/restorable = 1, exclude = 0
     restorable <- (lulc_other + lulc_converted) |>
         mask(hfp_intermediate, maskvalue = 0, updatevalue = 1) |>
         classify(cbind(1, Inf, 1)) |> 
@@ -432,7 +436,7 @@ if (pp_ft_mask) {
 
     ft_list |>
         map(~rast(.x)) |>
-        map(~mask(.x, pu_mask, maskvalue = c(1, NA))) |>
+        map(~mask(.x, pu_mask, maskvalue = c(0, NA))) |>
         walk2(
             .y = file_names,
             ~writeRaster(.x, file.path(dir_features, paste0(.y, "_mask", ".tif")), overwrite = TRUE)
