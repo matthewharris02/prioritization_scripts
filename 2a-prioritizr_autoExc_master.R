@@ -414,15 +414,14 @@ for (i in 1:length(budgets)) {
 # 7. Output solutions ====
 ## 7.1 Combine solutions into one 'ranked' solution ====
 print("Combining solutions...")
-combined_solution <- solutions |>
-    reduce(left_join, by = "id") |>
+joined_solution <- solutions |>
+    reduce(left_join, by = "id") |> 
     select(-starts_with("cost")) |>
-    rowwise() |>
-    mutate(
-        final = sum(c_across(starts_with("solution")))
-    ) |>
-    select(id, final) |>
-    tibble() |>
+    setDT()
+combined_solution <- joined_solution[, `:=` (final = rowSums(.SD)),
+                               .SDcols = !c("id")
+                               ][, .(id, final)]
+combined_solution <- combined_solution |>
     left_join(select(grid_cell, c("id", "x", "y")), by = "id") |>
     write_csv(file.path(dir_output, glue::glue("solution_full_", info_str, ".csv")))
 
