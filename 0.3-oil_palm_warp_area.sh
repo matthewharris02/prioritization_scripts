@@ -4,9 +4,9 @@
 #   1. Warp to desired resolution using sum
 #   2. Calculate area fraction
 # ---------------------------------------------------------------------------- #
-dirBase='O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2/raw/oil_palm'
+dirBase='/mnt/sda/MH_restoration/raw/oil_palm'
 dirIn="${dirBase}/oil_palm_converted/intermediate_binary"
-res=5000
+res=20000
 dirOut="${dirBase}/oil_palm_converted"
 
 while read -r line; do
@@ -27,7 +27,7 @@ while read -r line; do
     dir_area="${dirOut}/intermediate_${res}km_area/"
     mkdir -p $dir_area
 
-    gdal_calc -A "${dir_res}/${newName_res}" --calc="A/${scale_factor}" --NoDataValue=-128 --outfile="${dir_area}/${newName_area}" --co compress=lzw --overwrite
+    gdal_calc.py -A "${dir_res}/${newName_res}" --calc="A/${scale_factor}" --NoDataValue=-128 --outfile="${dir_area}/${newName_area}" --co compress=lzw --overwrite
 done <"${dirBase}/files.txt"
 
 # MANUALLY GET tiff_list.txt

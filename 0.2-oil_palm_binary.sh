@@ -8,7 +8,7 @@
 #   1 = Closed-canopy oil palm plantations
 #   NA (-128) = everything else
 # ---------------------------------------------------------------------------- #
-dirBase='O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2/raw/oil_palm'
+dirBase='/mnt/sda/MH_restoration/raw/oil_palm'
 dirIn="${dirBase}/oil_palm_orig"
 dirOut="${dirBase}/oil_palm_converted/intermediate_binary"
 
@@ -19,5 +19,5 @@ while read -r line; do
     newName="${var}_converted.tif"
     mkdir -p $dirOut
 
-    gdal_calc -A "${dirIn}/${oldName}" --calc="(A<3)*1+(A==3)*-128" --NoDataValue=-128 --outfile="${dirOut}/${newName}" --co compress=lzw --overwrite
-done <files.txt
+    gdal_calc.py -A "${dirIn}/${oldName}" --calc="(A<3)*1+(A==3)*-128" --NoDataValue=-128 --outfile="${dirOut}/${newName}" --co compress=lzw --overwrite
+done <"${dirBase}/files.txt"
