@@ -354,7 +354,7 @@ if (pp_ecoregions) {
     print("CSV WRITE...")
     write_csv(remnant_table, file.path(dir_pu, "global_ecoregions_moll.csv"))
 
-    rm(land, ecoregions, ecoregions_rast, remnant)
+    rm(converted, ecoregions, ecoregions_rast, remnant)
 }
 
 ## 1.6 Process non-ecoregion Features ====
