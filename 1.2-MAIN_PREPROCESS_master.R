@@ -317,7 +317,7 @@ if (pp_ecoregions) {
     ecoregions_rast <- ecoregions |>
         st_transform(st_crs(EPSG)) |>
         rasterize(rast_template, field = "ECO_ID") |>
-        mask(land) |>
+        mask(converted) |>
         writeRaster(file.path(dir_pu, fn_template("ecoregions")),
                     overwrite = TRUE)
 
