@@ -476,7 +476,7 @@ if (pp_cells) {
                              na.rm = FALSE) |>
         setDT()
 
-    pu_vals <- pu_vals[!is.na(ISONUM), ][pu == 0, ] # Filter our non 'restorable land'
+    pu_vals <- pu_vals[!is.na(ISONUM), ][!is.na(pu), ] # Filter our non 'restorable land'
 
 
     pu_vals <- pu_vals[, id := 1:.N]
