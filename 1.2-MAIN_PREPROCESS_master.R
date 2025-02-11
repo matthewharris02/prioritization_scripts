@@ -297,10 +297,11 @@ if (pp_restorable) {
     lulc_other <- rast(file.path(dir_pu, fn_template("lulc_other")))
     lulc_converted <- rast(file.path(dir_pu, fn_template("lulc_converted")))
     hfp_intermediate <- rast(file.path(dir_pu, fn_template("hfp_mask")))
-    # Include/restorable = 1, exclude = 0
-    restorable <- (lulc_other + lulc_converted) |>
-        mask(hfp_intermediate, maskvalue = 0, updatevalue = 1) |>
-        classify(cbind(1, Inf, 1)) |>
+    # Include/restorable = 1, exclude = NA
+    restorable <- hfp_intermediate |> 
+        mask(lulc_other, maskvalue = c(0), updatevalue = NA) |> 
+        mask(lulc_converted, maskvalue = c(0), updatevalue = NA) |> 
+        classify(cbind(0, NA)) |> 
         writeRaster(file.path(dir_pu, fn_template("restorable_land")), overwrite = TRUE)
 
     # TODO: Make output name include the HFP bounds for easy identification
