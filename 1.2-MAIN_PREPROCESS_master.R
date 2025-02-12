@@ -241,33 +241,16 @@ plant <- (rast(file.path(dir_in, pu_fn["plant_forests"])) * 100) |>
     project(rast_template, method = "average") |>
     writeRaster(file.path(dir_pu, fn_template("plant_forests")), overwrite = TRUE)
 
-### 1.3.3 Oil Palm Plantations
-# NOTE: relies on pre-processing in 0.2 and 0.3
-# This ensures that it is the same extent and resolution as all the rest
-#   Nearest-neighbour because it is already 5km, and it is just alignment needed
-#   Need to multiply by 100 as this is 0-1 but copernicus is 0-100
-ifile <- file.path(dir_in, pu_fn["plant_palm"])
-ofile <- file.path(dir_pu, fn_template("plant_palm"))
-args <- gdalwarp_args("near", ifile, ofile, EPSG, RES, EXT)
-system2(gdalwarp_path, args, wait = TRUE)
-
-
-palm <- (rast(file.path(dir_in, pu_fn["plant_palm"])) * 100) |>
-    classify(cbind(-Inf, 0, 0)) |> # Remove weird negatives
-    project(rast_template) |>
-    classify(cbind(NA, 0)) |> # necessary to make the sum below work
-    writeRaster(file.path(dir_pu, fn_template("plant_palm")), overwrite = TRUE)
 
 ### 1.3.4 Converted land raster
-# Converted = built + crop + palm + plantations
+# Converted = built + crop + plantations
 built <- rast(file.path(dir_inter, fn_template("lulc_built")))
 crops <- rast(file.path(dir_inter, fn_template("lulc_crop")))
-palm <- rast(file.path(dir_pu, fn_template("plant_palm")))
 plant <- rast(file.path(dir_pu, fn_template("plant_forests")))
 
 # [Note to self: Faster through R than gdal_calc here]
 # Include/restorable = 1, exclude = 0
-converted <- (built + crops + palm + plant) |>
+converted <- (built + crops + plant) |>
     classify(data.frame(
         from    = c(0,  50),
         to      = c(50, Inf), # Inf to catch the weird >100
