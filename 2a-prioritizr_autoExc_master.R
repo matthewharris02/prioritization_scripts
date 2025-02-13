@@ -36,7 +36,7 @@ opt_ecoregions <- TRUE # Include ecoregions?
 # drop_features: Select which features to drop
 #   !! each ones should be a string
 #   !! To include all/exclude none leave empty `c()` or as `NULL`
-drop_feature <-  c("ft_usefulplants")
+drop_feature <-  c()
 
 ## 1.2 Shared options ====
 # Load options file to share options with pre-processing
