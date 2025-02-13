@@ -238,9 +238,20 @@ if (opt_ecoregions) {
         rename(
             "pu" = id
         )
-    rij <- rbindlist(list(ft_split, rij_global, rij_ecoregions))
+}
+
+if (split) {
+    if (opt_ecoregions) {
+        rij <- rbindlist(list(ft_split, rij_global, rij_ecoregions))
+    } else {
+        rij <- rbindlist(list(ft_split, rij_global))
+    }
 } else {
-    rij <- rbind(ft_split, rij_global)
+    if (opt_ecoregions) {
+        rij <- rbindlist(list(rij_global, rij_ecoregions))
+    } else {
+        rij <- rij_global
+    }
 }
 
 
