@@ -72,7 +72,7 @@ exclude_feature <- str_flatten(drop_feature, "|") # Create regex string to exclu
 if (is.null(drop_feature)) {exclude_feature <- "^$"} # Work-around for matching nothing so that if drop_features is empty, it selects them all
 
 variables <- read_csv(file.path(dir_in, "preprocess_info.csv")) |>
-    filter(grepl("ft*", var)) |> # select only ft_ variables
+    filter(grepl("ft_*", var)) |> # select only ft_ variables
     filter(!grepl(exclude_feature, var)) # exclude the variables in drop_feature
 
 # List of all features for loading
@@ -170,9 +170,14 @@ if (split) {
 ## 3.2 Helper: add_feat() ====
 # Helper function to add feature
 add_feat <- function(feat, feat_master) {
+    # If split == FALSE, then max() returns -Inf,
+    #   so need to set species_id_start to 0 for the iterative id to work
+    species_id_start = ifelse(max(feat_master$species, na.rm = TRUE) == -Inf,
+                         0,
+                         max(feat_master$species, na.rm = TRUE))
     row <- data.frame(
         name = feat,
-        species = max(feat_master$species, na.rm = TRUE) + 1
+        species = species_id_start + 1
     )
     feat_master <- bind_rows(feat_master, row)
 }
@@ -238,9 +243,20 @@ if (opt_ecoregions) {
         rename(
             "pu" = id
         )
-    rij <- rbindlist(list(ft_split, rij_global, rij_ecoregions))
+}
+
+if (split) {
+    if (opt_ecoregions) {
+        rij <- rbindlist(list(ft_split, rij_global, rij_ecoregions))
+    } else {
+        rij <- rbindlist(list(ft_split, rij_global))
+    }
 } else {
-    rij <- rbind(ft_split, rij_global)
+    if (opt_ecoregions) {
+        rij <- rbindlist(list(rij_global, rij_ecoregions))
+    } else {
+        rij <- rij_global
+    }
 }
 
 
