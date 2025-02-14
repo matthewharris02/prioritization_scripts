@@ -401,7 +401,17 @@ for (i in 1:length(budgets)) {
     print("Solving...")
     start <- Sys.time()
     s <- try(solve(p2, run_checks = FALSE))
-    if (inherits(s, "try-error")) { print("FAILED")}
+    if (inherits(s, "try-error")) {
+        print("FAILED, running again")
+        s <- try(solve(p2, run_checks = FALSE))
+        if (inherits(s, "try-error")) {
+            pritn("FAILED twice, ending...")
+            sink()
+            sink(type = "message")
+            close(file)
+            print("FAILED twice ... logging ended")
+        }
+    }
     end <- Sys.time()
 
 
