@@ -1,11 +1,12 @@
 ##%##########################################################################%##
 #          Multi-budget spatial prioritisation (min_shortfall)                 #
 #                  with easy exclusion of features                             #
-#           V 30.08.2024    Matthew Harris and Vignesh Kamath                  #
+#                  Matthew Harris and Vignesh Kamath                           #
 ##%##########################################################################%##
 #   REMINDERS:                                                                 #
 #       - CHECK the dir_wd                                                     #
 #       - check the file name for shared options (`1.1-OPTIONS.R`)             #
+#       - Check the solution-related options (e.g., runid)                     #
 ##%##########################################################################%##
 
 # 0. Load libraries ====
