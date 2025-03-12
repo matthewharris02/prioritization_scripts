@@ -1,29 +1,36 @@
 ##%##########################################################################%##
 #       Script for pre-processing for spatial prioritization                   #
-#           V 29.08.2024    Matthew Harris and Vignesh Kamath                  #
+#                    Matthew Harris and Vignesh Kamath                         #
 ##%##########################################################################%##
 # REQUIRED packages:
 #       - sf, terra, tidyverse, arrow, data.table, tictoc, prioritzr, glue
 ##%##########################################################################%##
 # REQUIRED BEFORE STARTING - set OPTIONS (external script):
-#   - Define the 'options' in the '0-OPTIONS.R' script
+#   - Define the 'options' in the '1.1-OPTIONS.R' script
 #   - This is the parameters of the solution (e.g., resolution, extent,
-#       projection) that are shared amongst 0.1, 0.2 and 0.3
+#       projection) that are shared amongst 1.2, 1.3 and 2
 ##%##########################################################################%##
 # ENSURE CORRECT SETTINGS in section 0.1
 #   - Set the working directory in this script
-#   - This define what parts of the script need to be ran
+#   - This defines what parts of the script need to be ran
 #   - Set a 'runid' in order to distinguish between multiple runs
 #       if it is the same RES
-#   - Set gdalwarp_path
+#   - Set gdalwarp_path and gdalcalc_path
 ##%##########################################################################%##
+
+# Sys.setenv(PATH="/home/science/miniforge3/condabin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin")
+# library(reticulate)
+# use_condaenv("matthew")
+
 
 ##%##########################################################################%##
 # 0.1 MAKE CHANGES HERE ====
 ## Set working directory ====
-dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2"
+dir_wd <- "/mnt/sda/MH_restoration"
+# dir_wd <- "/home/matthewh@internal.wcmc/projects_active/p09217_RestorationPotentialLayer/global2025"
+# dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2"
 dir_src <- dir_wd
-# dir_wd <- "/home/matthewh@internal.wcmc/projects_active/p09217_RestorationPotentialLayer/global2024_v2"
+# dir_src <- "C:/Users/matthewh/LOCAL/projects_local/restoration_scripts_git"
 ## Set run-id ====
 runid <- ""
 ## Options for choosing what to pre-process ====
@@ -32,10 +39,12 @@ pp_hfp <- TRUE
 pp_lulc <- TRUE
 pp_restorable <- TRUE
 pp_ecoregions <- TRUE
-pp_ncp_vec <- TRUE
-pp_ncp_ras <- TRUE
-pp_ncp_mask <- TRUE
+pp_ft_vec <- TRUE
+pp_ft_ras <- TRUE
+pp_ft_mask <- TRUE
 pp_cells <- TRUE
+
+
 
 # automatically create needed sub directories
 auto_dir <- TRUE
@@ -46,6 +55,10 @@ auto_dir <- TRUE
 #   On windows, probably: C:/OSGeo4W/bin/gdalwarp.exe
 #   On linux, probably already on path :)
 gdalwarp_path <- "gdalwarp"
+# Probably "gdal_calc" if system set correctly
+# gdalcalc_path <- " /home/science/miniforge3/envs/matthew/bin/gdal_calc.py"
+# gdalcalc_path <- "gdal_calc"
+gdalcalc_path <- "gdal_calc.py"
 ##%##########################################################################%##
 # 0.2 - SET UP ====
 ## Load libraries
@@ -61,13 +74,15 @@ start <- Sys.time()
 
 ## Load dependency scripts ====
 # Load options
-source(file.path(dir_src, "script_tools/v3/1.1-OPTIONS.R"))
+source(file.path(dir_src, "script_tools/1.1-OPTIONS.R"))
+# source(file.path(dir_src, "1.1-OPTIONS.R"))
 # Load helper functions
 #   - gdalwarp_args()      -- create gdalwarp command
-#   - prepare_ncp_r_gdal() -- convert raster NCPs using gdal
-#   - prepare_ncp_v_area() -- convert vector NCPs to use polygon area
-#   - prepare_ncp_v_raw()  -- convert vector NCPs using vector attribute
-source(file.path(dir_src, "script_tools/v3/0.0-helper_functions.R"))
+#   - prepare_ft_r_gdal() -- convert raster features using gdal
+#   - prepare_ft_v_area() -- convert vector features to use polygon area
+#   - prepare_ft_v_raw()  -- convert vector features using vector attribute
+source(file.path(dir_src, "script_tools/0.9-helper_functions.R"))
+# source(file.path(dir_src, "0.9-helper_functions.R"))
 ##%##########################################################################%##
 # 0.3 Automatically defined variables ====
 # The following variables are automatic, and use the above information
@@ -82,7 +97,7 @@ dir_in <- file.path(dir_wd, "raw")
 if (auto_dir) {
     if (!dir.exists(dir_out)) dir.create(dir_out, recursive = TRUE)
     walk(
-        c(dir_features, dir_pu),
+        c(dir_features, dir_pu, dir_proc, dir_inter),
         ~if (!dir.exists(.x)) dir.create(.x, recursive = TRUE)
     )
 }
@@ -93,16 +108,16 @@ variables <- read_csv(file.path(dir_in, "preprocess_info.csv"))
 
 pu_fn <- variables |>
     select(var, fn_raw) |>
-    filter(!grepl("ncp", var)) |>
+    filter(!grepl("ft", var)) |>
     deframe()
 
-ncps <- variables |>
-    filter(grepl("ncp", var)) |>
+features <- variables |>
+    filter(grepl("ft", var)) |>
     filter(!is.na(fn_raw))
 
 
 ## Helper functions ====
-# Helper function to make sure all output files named consistently :)
+# Helper function to make sure all output files named consistently
 fn_template <- function(name, extra = "", ext = ".tif") {
     return(paste0(name, "_", RES, "km_", PROJ, extra, ext))
 }
@@ -114,6 +129,7 @@ rast_template <- rast(
     res = c(1000 * RES, 1000 * RES),
     ext = ext(EXT)
 )
+
 sf_use_s2(FALSE) # To avoid intersecting polygon errors. *Workaround*
 setwd(dir_wd)
 ##%##########################################################################%##
@@ -152,80 +168,146 @@ if (pp_countries) {
 ## 1.2 Human footprint ====
 if (pp_hfp) {
     print("* Processing Human Footprint *")
+
+    # Reclassify with gdal_calc.py
     ifile <- file.path(dir_in, pu_fn["hfp"])
-    ofile <- file.path(dir_pu, fn_template("hfp"))
-    # args_additional <- "-srcnodata 128 -dstnodata -128"
-    args <- gdalwarp_args("mode", ifile, ofile, EPSG, RES, EXT) #, args = args_additional)
-    system2(gdalwarp_path, args, wait = TRUE)
+    ofile <- file.path(dir_inter, fn_template("hfp_binary"))
+
+    # Include/restorable = 1, exclude = 0
+    system(glue(
+        gdalcalc_path,
+        ' -A "{ifile}"',
+        ' --calc="(A<={hfp_lower})*(A>{hfp_upper})*0+(A>{hfp_lower})*(A<={hfp_upper})*1"',
+        ' --co compress=lzw --overwrite --outfile "{ofile}"'
+    ))
+
+    # Reduce resolution with gdalwarp
+    ifile <- file.path(dir_inter, fn_template("hfp_binary"))
+    ofile <- file.path(dir_pu, fn_template("hfp_mask"))
+    system2(
+        gdalwarp_path,
+        gdalwarp_args("mode", ifile, ofile, EPSG, RES, EXT),
+        wait = TRUE
+    )
 }
 
-## 1.3 LULC ====
+## 1.3 Land Use Exclusion ====
+### 1.3.1 Land Use and Land Cover Processing
 if (pp_lulc) {
     print("* Processing LULC *")
-    ifile <- file.path(dir_in, pu_fn["lulc"])
-    ofile <- file.path(dir_pu, fn_template("lulc"))
-    args <- gdalwarp_args("mode", ifile, ofile, EPSG, RES, EXT)
-    system2(gdalwarp_path, args, wait = TRUE)
+    fns_lulc <- variables |>
+        select(var, fn_raw) |>
+        filter(grepl("lulc", var)) |>
+        filter(var != "lulc_discrete") |>
+        deframe()
+
+    # Convert fractional cover to correct resolution
+    for (fn_lulc in names(fns_lulc)) {
+        ifile <- file.path(dir_in, pu_fn[fn_lulc])
+        ofile <- file.path(dir_inter, fn_template(fn_lulc))
+        args <- gdalwarp_args("average", ifile, ofile, EPSG, RES, EXT, args = "-wm 2G -co GDAL_CACHEMAX=8000")
+        print(args)
+        system2(gdalwarp_path, args, wait = TRUE)
+    }
+
+    # Create binary 'other excluded land' (non-converted) raster
+    pwater <- rast(file.path(dir_inter, fn_template("lulc_pwater")))
+    swater <- rast(file.path(dir_inter, fn_template("lulc_swater")))
+    moss <- rast(file.path(dir_inter, fn_template("lulc_moss")))
+    snow <- rast(file.path(dir_inter, fn_template("lulc_snow")))
+    bare <- rast(file.path(dir_inter, fn_template("lulc_bare")))
+
+    # [Note to self: Faster through R than gdal_calc here]
+    # Include/restorable = 1, exclude = 0
+    lulc_other <- (pwater + swater + moss + snow + bare) |>
+        classify(data.frame(
+            from    = c(0,  50),
+            to      = c(50, Inf),
+            becomes = c(1,  0)
+        ),
+        right = FALSE # so >= 50
+        )
+    writeRaster(lulc_other, file.path(dir_pu, fn_template("lulc_other")), overwrite = TRUE)
+
 }
 
+### 1.3.2 Planted trees from Xiao (2024) and Xiao et al. (2024)
+# NOTE: loads planted trees already exported through GEE at 1km mean
+# This ensures that it is the same extent and resolution as all the rest
+# It had to be exported at 1km due to processing limitations
+#   Need to multiply by 100 as this is 0-1 but copernicus is 0-100
+plant <- (rast(file.path(dir_in, pu_fn["plant_forests"])) * 100) |>
+    classify(cbind(NA, 0)) |>
+    project(rast_template, method = "average") |>
+    writeRaster(file.path(dir_pu, fn_template("plant_forests")), overwrite = TRUE)
+
+
+### 1.3.4 Converted land raster
+# Converted = built + crop + plantations
+built <- rast(file.path(dir_inter, fn_template("lulc_built")))
+crops <- rast(file.path(dir_inter, fn_template("lulc_crop")))
+plant <- rast(file.path(dir_pu, fn_template("plant_forests")))
+
+# [Note to self: Faster through R than gdal_calc here]
+# Include/restorable = 1, exclude = 0
+converted <- (built + crops + plant) |>
+    classify(data.frame(
+        from    = c(0,  50),
+        to      = c(50, Inf), # Inf to catch the weird >100
+        becomes = c(1,  0)
+    ),
+    right = FALSE # so >= 50
+    )
+
+writeRaster(converted, file.path(dir_pu, fn_template("lulc_converted")), overwrite = TRUE)
+
+# TESTS
+# built_crop <- (built + crops) |>
+#     classify(data.frame(
+#         from    = c(0,  50),
+#         to      = c(50, Inf), # Inf to catch the weird >100
+#         becomes = c(1,  0)
+#     ),
+#     right = FALSE # so >= 50
+#     )
+#
+# writeRaster(built_crop, file.path(dir_pu, fn_template("lulc_converted_noPlant")), overwrite = TRUE)
+# END TEST
 
 ## 1.4 Create restorable land planning units ====
 if (pp_restorable) {
     print("* Processing Restorable Land *")
-    # Load preprocessed layers from previous step
-    hfp <- rast(file.path(dir_pu, fn_template("hfp")))
-    lulc <- rast(file.path(dir_pu, fn_template("lulc")))
+    lulc_other <- rast(file.path(dir_pu, fn_template("lulc_other")))
+    lulc_converted <- rast(file.path(dir_pu, fn_template("lulc_converted")))
+    hfp_intermediate <- rast(file.path(dir_pu, fn_template("hfp_mask")))
+    # Include/restorable = 1, exclude = NA
+    restorable <- hfp_intermediate |> 
+        mask(lulc_other, maskvalue = c(0), updatevalue = NA) |> 
+        mask(lulc_converted, maskvalue = c(0), updatevalue = NA) |> 
+        classify(cbind(0, NA)) |> 
+        writeRaster(file.path(dir_pu, fn_template("restorable_land")), overwrite = TRUE)
 
-    # Binary reclassification from HFP
-    rcl_intermediate <- tibble(
-        from    = c(0,         hfp_lower, hfp_upper),
-        to      = c(hfp_lower, hfp_upper, 51),
-        becomes = c(0,         1,         0)
-    )
-
-    intermediate_hfp <- classify(hfp, rcl_intermediate) |>
-        writeRaster(file.path(dir_pu, fn_template("hfp_intermediate")),
-                    overwrite = TRUE)
-
-    # Binary reclassification from LULC
-    rcl_lulc <- tibble(
-        from    = c(0,  39, 89,  199),
-        to      = c(39, 89, 199, 200),
-        becomes = c(1,  0,  1,   NA)
-    )
-
-    lulc_exclude <- lulc |>
-        classify(rcl_lulc) |>
-        writeRaster(file.path(dir_pu, fn_template("cop_excludeNotNat")),
-                    overwrite = TRUE)
-
-    intermediate_hfp_lulc_exclude <- intermediate_hfp * lulc_exclude
-
-    # Make sure output name includes the HFP bounds for easy identification
-    out_name <- fn_template(paste0("intermediateHFP_", hfp_lower, "_", hfp_upper, "_excludeNotNat"))
-    writeRaster(intermediate_hfp_lulc_exclude,
-                file.path(dir_pu, out_name),
-                overwrite = TRUE)
+    # TODO: Make output name include the HFP bounds for easy identification
+    #   this used to work in old code, but made more general here
 }
+
 ## 1.5 Process ecoregions ====
 if (pp_ecoregions) {
     print("* Processing ecoregions *")
     # Load LULC not-natural layer as 'modified' land map
-    land <- rast(file.path(dir_pu, fn_template("cop_excludeNotNat")))
-    modified_mask <- land |>
-        classify(cbind(0, NA))
+    converted <- rast(file.path(dir_pu, fn_template("lulc_converted")))
 
     ecoregions <- st_read(file.path(dir_in, pu_fn["ecoregions2017"]))
     ecoregions_rast <- ecoregions |>
         st_transform(st_crs(EPSG)) |>
         rasterize(rast_template, field = "ECO_ID") |>
-        mask(land) |>
-        writeRaster(file.path(dir_pu, fn_template("ecoregions_withIceRock")),
+        mask(converted) |>
+        writeRaster(file.path(dir_pu, fn_template("ecoregions")),
                     overwrite = TRUE)
 
-    remnant <- ecoregions_rast * modified_mask
+    remnant <- mask(ecoregions_rast, converted, maskvalue = 0, updatevalue = NA)
     writeRaster(remnant,
-                file.path(dir_pu, fn_template("ecoregionsremnant_withIceRock")),
+                file.path(dir_pu, fn_template("ecoregionsremnant")),
                 overwrite = TRUE)
 
     ### 1.5.1 Calculate number of pixels per ecoregion ====
@@ -256,108 +338,92 @@ if (pp_ecoregions) {
     print("CSV WRITE...")
     write_csv(remnant_table, file.path(dir_pu, "global_ecoregions_moll.csv"))
 
-    ### 1.5.3 Create without ice and rock ====
-    ecor2 <- classify(ecoregions_rast, cbind(0, NA))
-    writeRaster(ecor2,
-                file.path(dir_pu, fn_template("ecoregions_noIceRock")),
-                overwrite = TRUE)
-
-    remnant2 <- classify(remnant, cbind(0, NA))
-    writeRaster(remnant2,
-                file.path(dir_pu, fn_template("ecoregionsremnant_noIceRock")),
-                overwrite = TRUE)
-
-    rm(land, modified_mask, ecoregions, ecoregions_rast, remnant, ecor2, remnant2)
+    rm(converted, ecoregions, ecoregions_rast, remnant)
 }
-## 1.6 Process NCPs ====
-# NOTE: all NCP and biodiversity layers (ncp_bio) should ALREADY be rasters.
-#   Processing of vectors (e.g., KBAs, salt marshes) is done separately
-source(file.path(dir_src, "script_tools/v3/1.4-p1-ncp.R"))
 
-
+## 1.6 Process non-ecoregion Features ====
 ### 1.6.1 Vector processing ====
-if (pp_ncp_vec) {
-    print("Processing NCP: vectors ====")
+if (pp_ft_vec) {
+    print("Processing features: vectors ====")
 
-    # Process vector NCPs that want the area coverage
-    ncp_fn_area <- ncps |>
+    # Process vector features that want the area coverage
+    ft_fn_area <- features |>
         filter(type == "vec" & method == "area") |>
         select(var, fn_raw) |>
         deframe()
 
-    for (ncp_name in names(ncp_fn_area)) {
-        prepare_ncp_v_area(ncp_name)
+    for (ft_name in names(ft_fn_area)) {
+        prepare_ft_v_area(ft_name)
     }
 
-    ncp_fn_other <- ncps |>
+    ft_fn_other <- features |>
         filter(type == "vec" & method != "area") |>
         select(var, fn_raw) |>
         deframe()
 
     # Manually prepare saltmarshes as weird data
-    marshes <- st_read(file.path(dir_in, ncp_fn_other["ncp_saltmarshes"])) |>
+    marshes <- st_read(file.path(dir_in, ft_fn_other["ft_saltmarshes"])) |>
         st_centroid() |>
         st_transform(st_crs(EPSG)) |>
         rasterize(rast_template, field = "areakm2", fun = "sum") |>
-        writeRaster(file.path(dir_out, "ncp", fn_template("ncp_saltmarshes")),
+        writeRaster(file.path(dir_out, "features", fn_template("ft_saltmarshes")),
                     overwrite = TRUE)
-    # Prepare vector NCPs that want attribute values
-    prepare_ncp_v_raw("ncp_coastal", "coastal_potential_cur", "mean")
+    # Prepare vector features that want attribute values
+    prepare_ft_v_raw("ft_coastal", "coastal_potential_cur", "mean")
 
 
 }
 ### 1.6.2 Raster processing ====
-if (pp_ncp_ras) {
+if (pp_ft_ras) {
 
-    print("Processing NCP: rasters ====")
-    ncp_fn_r <- ncps |>
+    print("Processing features: rasters ====")
+    ft_fn_r <- features |>
         filter(type == "ras") |>
         select(var, fn_raw) |>
         deframe()
 
 
-    ncp_method <- ncps |>
+    ft_method <- features |>
         filter(type == "ras") |>
         select(var, method) |>
         # mutate(method = "average") |> # manually set method to 'average' for all to fix errors
         deframe()
 
 
-    for (ncp in names(ncp_fn_r)) {
-        print(paste0("Processing: ", ncp, " ..."))
-        ifile <- file.path(dir_in, ncp_fn_r[ncp])
-        ofile <- file.path(dir_features, fn_template(ncp))
-        method <- ncp_method[ncp]
-        prepare_ncp_r_gdal(ifile, ofile, method, gdalwarp_path)
+    for (ft in names(ft_fn_r)) {
+        print(paste0("Processing: ", ft, " ..."))
+        ifile <- file.path(dir_in, ft_fn_r[ft])
+        ofile <- file.path(dir_features, fn_template(ft))
+        method <- ft_method[ft]
+        prepare_ft_r_gdal(ifile, ofile, method, gdalwarp_path)
 
     }
 
 
 }
-### 1.6.3 Mask NCPs to PU ====
+### 1.6.3 Mask features to PU ====
 # Mask with planning units so only necessary ones kept
 
-if (pp_ncp_mask) {
-    print("Processing NCPs: masking ====")
-    # ncp_list <- unlist(select(ncps, var), use.names = FALSE)
-    pu_mask <- rast(file.path(dir_pu, fn_template(paste0("intermediateHFP_", hfp_lower, "_", hfp_upper, "_excludeNotNat"))))
+if (pp_ft_mask) {
+    print("Processing features: masking ====")
+    pu_mask <- rast(file.path(dir_pu, fn_template("restorable_land")))
 
 
-    ncp_list <- list.files(dir_features,
-                           recursive = TRUE,
-                           full.names = TRUE,
-                           pattern = glue::glue("*_{RES}km_{PROJ}.tif$"))
+    ft_list <- list.files(dir_features,
+                          recursive = TRUE,
+                          full.names = TRUE,
+                          pattern = glue::glue("*_{RES}km_{PROJ}.tif$"))
 
-    file_names <- ncp_list |>
+    file_names <- ft_list |>
         basename() |>
         str_remove_all(".tif")
 
-    ncp_list |>
+    ft_list |>
         map(~rast(.x)) |>
         map(~mask(.x, pu_mask, maskvalue = c(0, NA))) |>
         walk2(
             .y = file_names,
-            ~writeRaster(.x, file.path(dir_features, paste0(.y, "_mask", extra, ".tif")), overwrite = TRUE)
+            ~writeRaster(.x, file.path(dir_features, paste0(.y, "_mask", ".tif")), overwrite = TRUE)
         )
 
 }
@@ -367,33 +433,33 @@ if (pp_ncp_mask) {
 
 if (pp_cells) {
     print("* Creating grid cells *")
-    pu_rast <- c("countries", "lulc") |>
+    pu_rast <- c("countries", "lulc_converted", "lulc_other") |>
         map(~file.path(dir_pu, fn_template(.x))) |>
         map(~rast(.x)) |>
         rast()
 
-    hfp_int <- rast(file.path(dir_pu, str_glue("intermediateHFP_{hfp_lower}_{hfp_upper}_excludeNotNat_{RES}km_{PROJ}.tif")))
-    ecoregions <- rast(file.path(dir_pu, fn_template("ecoregions_withIceRock")))
+    pu <- rast(file.path(dir_pu, fn_template("restorable_land")))
+    ecoregions <- rast(file.path(dir_pu, fn_template("ecoregions")))
 
-    ncp_present <- list.files(dir_features,
-                              pattern = "_mask.tif$",
-                              full.names = TRUE)
-    ncp_names <- ncp_present |>
+    ft_present <- list.files(dir_features,
+                             pattern = "_mask.tif$",
+                             full.names = TRUE)
+    ft_names <- ft_present |>
         basename() |>
         str_remove_all(fixed(".tif")) |>
-        str_extract("(ncp_[A-Za-z0-9]+)")
-    ncp_rast <- ncp_present |>
+        str_extract("(ft_[A-Za-z0-9]+)")
+    ft_rast <- ft_present |>
         map(~rast(.x)) |>
         rast()
 
-    all_rast <- c(pu_rast, hfp_int, ecoregions, ncp_rast)
-    names(all_rast) <- c("ISONUM", "lulc", "hfp", "ecoregions", ncp_names)
+    all_rast <- c(pu_rast, pu, ecoregions, ft_rast)
+    names(all_rast) <- c("ISONUM", "lulc_converted", "lulc_other", "pu", "ecoregions", ft_names)
     pu_vals <- as.data.frame(all_rast,
                              xy = TRUE,
                              na.rm = FALSE) |>
         setDT()
 
-    pu_vals <- pu_vals[!is.na(ISONUM), ][hfp == 1, ]
+    pu_vals <- pu_vals[!is.na(ISONUM), ][!is.na(pu), ] # Filter our non 'restorable land'
 
 
     pu_vals <- pu_vals[, id := 1:.N]

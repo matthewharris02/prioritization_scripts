@@ -21,7 +21,7 @@ gdalwarp_args <- function(method, ifile, ofile, EPSG, RES, EXT, args = "") {
 }
 
 # Prepare raster NCPs using GDAL to make it quick
-prepare_ncp_r_gdal <- function(ifile, ofile, method, gdalwarp_path) {
+prepare_ft_r_gdal <- function(ifile, ofile, method, gdalwarp_path) {
     args <- gdalwarp_args(method, ifile, ofile,
                           RES = RES,
                           EPSG = EPSG,
@@ -31,8 +31,8 @@ prepare_ncp_r_gdal <- function(ifile, ofile, method, gdalwarp_path) {
 
 
 # Convert vector NCPs to raster by the area of each grid cell covered
-prepare_ncp_v_area <- function(ncp_name) {
-    ncp <- st_read(file.path(dir_in, ncp_fn_area[ncp_name])) |>
+prepare_ft_v_area <- function(ncp_name) {
+    ncp <- st_read(file.path(dir_in, ft_fn_area[ncp_name])) |>
         st_crop(c(
             xmin = -180,
             ymin = -90,
@@ -48,8 +48,8 @@ prepare_ncp_v_area <- function(ncp_name) {
 
 # Convert vector NCP to raster by transferring the value of the vector to the
 #   raster cells
-prepare_ncp_v_raw <- function(ncp_name, field, fun) {
-    ncp <- st_read(file.path(dir_in, ncp_fn_other[ncp_name])) |>
+prepare_ft_v_raw <- function(ncp_name, field, fun) {
+    ncp <- st_read(file.path(dir_in, ft_fn_other[ncp_name])) |>
         st_transform(st_crs(EPSG)) |>
         select(all_of(field)) |>
         rasterize(rast_template,

@@ -1,11 +1,12 @@
 ##%##########################################################################%##
 #          Multi-budget spatial prioritisation (min_shortfall)                 #
 #                  with easy exclusion of features                             #
-#           V 30.08.2024    Matthew Harris and Vignesh Kamath                  #
+#                  Matthew Harris and Vignesh Kamath                           #
 ##%##########################################################################%##
 #   REMINDERS:                                                                 #
 #       - CHECK the dir_wd                                                     #
 #       - check the file name for shared options (`1.1-OPTIONS.R`)             #
+#       - Check the solution-related options (e.g., runid)                     #
 ##%##########################################################################%##
 
 # 0. Load libraries ====
@@ -19,7 +20,8 @@ library(terra)
 
 # 1. OPTIONS and set-up ====
 ## 1.1 EDITABLE options ====
-dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2"
+dir_wd <- "/mnt/sda/MH_restoration"
+# dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2"
 dir_src <- dir_wd
 ### Prioritzr-related options ====
 write_each <- TRUE    # If TRUE, writes solution for each budget
@@ -30,16 +32,16 @@ opt_threads <- 1      # Choose number of threads (ONLY for CBC solver)
 ### Solution-related options ====
 auto_dir <- TRUE      # Automatically create needed directories?
 runid <- ""           # Additional ID to distinguish runs
-split <- TRUE         # Include NCPs split by country?
+split <- TRUE         # Include features split by country?
 opt_ecoregions <- TRUE # Include ecoregions?
 # drop_features: Select which features to drop
 #   !! each ones should be a string
 #   !! To include all/exclude none leave empty `c()` or as `NULL`
-drop_feature <-  c("ncp_usefulplants")
+drop_feature <-  c()
 
 ## 1.2 Shared options ====
 # Load options file to share options with pre-processing
-source(file.path(dir_src, "script_tools/v3/1.1-OPTIONS.R"))
+source(file.path(dir_src, "script_tools/1.1-OPTIONS.R"))
 
 # 1.3 Load package for solver ====
 if (solver == "cbc") {
@@ -66,23 +68,23 @@ rast_template <- rast(
     ext = ext(EXT)
 )
 
-## 1.6 Load NCP variable information ====
+## 1.6 Load feature variable information ====
 exclude_feature <- str_flatten(drop_feature, "|") # Create regex string to exclude vars
 if (is.null(drop_feature)) {exclude_feature <- "^$"} # Work-around for matching nothing so that if drop_features is empty, it selects them all
 
 variables <- read_csv(file.path(dir_in, "preprocess_info.csv")) |>
-    filter(grepl("ncp*", var)) |> # select only ncp_ variables
+    filter(grepl("ft_*", var)) |> # select only ft_ variables
     filter(!grepl(exclude_feature, var)) # exclude the variables in drop_feature
 
-# List of all ncp features for loading
-ncp_all <- unlist(select(variables, var), use.names = FALSE)
+# List of all features for loading
+ft_all <- unlist(select(variables, var), use.names = FALSE)
 
-# List of ncps to be split nationally or left globally for selecting later
-ncp_national <- variables |>
+# List of features to be split nationally or left globally for selecting later
+ft_national <- variables |>
     filter(split == "national") |>
     select(var) |>
     unlist(use.names = FALSE)
-ncp_global <- variables |>
+ft_global <- variables |>
     filter(split == "global") |>
     select(var) |>
     unlist(use.names = FALSE)
@@ -103,18 +105,18 @@ if (!split) {
 
     grid_cell <- open_dataset(file.path(dir_proc, "global_cells"),
                               partitioning = c("ISONUM")) |>
-        select(id, x, y, any_of(col_ecoregions), all_of(ncp_all)) |>
+        select(id, x, y, any_of(col_ecoregions), all_of(ft_all)) |>
         mutate(
             across(any_of(c("id", "x", "y", col_ecoregions)),
                    ~as.integer(.x)),
-            across(any_of(c("ncp_kba", "ncp_ramsar", "ncp_saltmarshes")), # Use any_of just in case one of these is excluded
+            across(any_of(c("ft_kba", "ft_ramsar", "ft_saltmarshes")), # Use any_of just in case one of these is excluded
                    ~ifelse(is.na(.x), 0, .x)),
         ) |>
         collect() |>
         mutate(
             cost = 1,
             across(
-                .cols = starts_with("ncp"),
+                .cols = starts_with("ft"),
                 .fns = ~scales::rescale(.x,
                                         to = c(0, 1),
                                         from = c(0, max(.x, na.rm = TRUE)))
@@ -127,14 +129,14 @@ if (!split) {
 
     grid_cell <- open_dataset(file.path(dir_proc, "global_cells"),
                               partitioning = c("ISONUM")) |>
-        select(id, x, y, any_of(col_ecoregions), all_of(ncp_global)) |>
+        select(id, x, y, any_of(col_ecoregions), all_of(ft_global)) |>
         mutate(
             across(.cols = c(id, x, y), ~as.integer(.x)),
             cost = 1
         ) |>
         collect()
 
-    ncp_split <- paste0(file.path(dir_proc, "split"), "/", ncp_national, ".parquet") |>
+    ft_split <- paste0(file.path(dir_proc, "split"), "/", ft_national, ".parquet") |>
         lapply(function(filename) { read_parquet(filename) }) |>
         do.call(rbind, args = _)
 
@@ -169,30 +171,38 @@ if (split) {
 ## 3.2 Helper: add_feat() ====
 # Helper function to add feature
 add_feat <- function(feat, feat_master) {
+    # If split == FALSE, then max() returns -Inf,
+    #   so need to set species_id_start to 0 for the iterative id to work
+    species_id_start = ifelse(max(feat_master$species, na.rm = TRUE) == -Inf,
+                         0,
+                         max(feat_master$species, na.rm = TRUE))
     row <- data.frame(
         name = feat,
-        species = max(feat_master$species, na.rm = TRUE) + 1
+        species = species_id_start + 1
     )
     feat_master <- bind_rows(feat_master, row)
 }
 
 ## 3.3 Add features: global ====
-# Add feature for each global ncp
-for (feat in ncp_global) {
+# Add feature for each global feature (exc. ecoregions)
+for (feat in ft_global) {
     feat_master <- add_feat(feat, feat_master)
 }
 
-# Create intermediate feat_ncp to distinguish NCP from ecoregions later
-feat_ncp <- feat_master
+# Create intermediate feat_ft to distinguish ecoregions from other features later
+feat_ft <- feat_master
 
 ## 3.4 Ecoregion features ====
 if (opt_ecoregions) {
     # Prepare ecoregion features
 
-    feat_ecoregions <- grid_cell |>
-        select(ecoregions) |>
-        arrange(ecoregions) |>
-        filter(!is.na(ecoregions)) |>
+    ecoregions_data <- read_csv(file.path(dir_pu, "global_ecoregions_moll.csv"))
+
+    feat_ecoregions <- ecoregions_data |>
+        filter(!is.na(realised_extent)) |>
+        select(ECO_ID) |>
+        arrange(ECO_ID) |>
+        filter(!is.na(ECO_ID)) |>
         distinct() |>
         unlist() |>
         as.character()
@@ -208,21 +218,22 @@ feat_ids <- deframe(feat_master)
 # 4. RIJ ====
 rij_global <- data.frame(pu = NULL, species = NULL, amount = NULL)
 
-for (ncp in ncp_global) {
-    pu_vals_ncp <- grid_cell |>
-        select(id, all_of(ncp)) |>
-        mutate(species = feat_ids[ncp]) |>
-        rename_with(~c(ncp = "amount"), .cols = all_of(ncp)) |>
+for (ft in ft_global) {
+    pu_vals_ft <- grid_cell |>
+        select(id, all_of(ft)) |>
+        mutate(species = feat_ids[ft]) |>
+        rename_with(~c(ft = "amount"), .cols = all_of(ft)) |>
         select(id, species, amount) |>
         filter(!is.na(amount)) |>
         rename("pu" = id)
-    rij_global <- bind_rows(rij_global, pu_vals_ncp)
+    rij_global <- bind_rows(rij_global, pu_vals_ft)
 }
 
 if (opt_ecoregions) {
     rij_ecoregions <- grid_cell |>
         select(id, ecoregions) |>
         filter(!is.na(ecoregions)) |>
+        filter(ecoregions %in% feat_ecoregions) |> 
         mutate(
             ecoregions = as.character(ecoregions), # Convert to text to match feat_master
             amount = 1
@@ -233,9 +244,20 @@ if (opt_ecoregions) {
         rename(
             "pu" = id
         )
-    rij <- rbindlist(list(ncp_split, rij_global, rij_ecoregions))
+}
+
+if (split) {
+    if (opt_ecoregions) {
+        rij <- rbindlist(list(ft_split, rij_global, rij_ecoregions))
+    } else {
+        rij <- rbindlist(list(ft_split, rij_global))
+    }
 } else {
-    rij <- rbind(ncp_split, rij_global)
+    if (opt_ecoregions) {
+        rij <- rbindlist(list(rij_global, rij_ecoregions))
+    } else {
+        rij <- rij_global
+    }
 }
 
 
@@ -245,13 +267,13 @@ if (opt_ecoregions) {
     ecoregions_data <- read_csv(file.path(dir_pu, "global_ecoregions_moll.csv"))
 
     targets_ecoregions <- ecoregions_data |>
-        filter(ECO_ID %in% feat_ecoregions) |>
         filter(!is.na(realised_extent)) |>
         mutate(
             target = (1 - remnant_proportion) |>
                 scales::rescale(
-                    from = c(0.20, 0.75),
-                    to   = c(0.10, 0.30)),
+                    from = c(0, 1),
+                    to   = c(0.10, 0.30)
+                ),
             target = case_when(
                 target >= 0.3 ~ 0.3,
                 target < 0.3 & target > 0.1 ~ target,
@@ -266,7 +288,7 @@ if (opt_ecoregions) {
 }
 ## All targets ====
 targets <- tibble(
-    feature = feat_ncp$species,
+    feature = feat_ft$species,
     relative_target = "1",
 ) |>
     mutate(relative_target = as.numeric(relative_target))
@@ -296,11 +318,13 @@ p <- problem(
     add_relative_targets(targets)
 
 budgets <- seq(0.05, 1, 0.05)
+budgets <- seq(0.1, 1, 0.1)
 solutions <- list() # Solutions for each budget
 times <- list() # Problem solving times
 
 # Template string with basic info on solution for using with glue::glue later
-info_str <- "{solver}_{RES}km_{opt_gap}g_{opt_threads}t_{budgets[i]}b"
+info_str <- paste0("{solver}_{RES}km_{opt_gap}g_{opt_threads}t_{budgets[i]}b",
+                   ifelse(runid == "", "default", runid))
 
 
 f <- file(file.path(dir_logs, paste0("log0_run_details_", runid, ".txt")), open = "wt")
@@ -314,8 +338,8 @@ print(glue::glue("Threads: {opt_threads}"))
 print(glue::glue("Number of features: {dim(features)[1]}"))
 print(glue::glue("Number of PU: {dim(costs)[1]}"))
 # print("List of features:")
-# for (ncp in ncp_feats) {
-#     print(glue::glue("  - {ncp}"))
+# for (ft in ft_feats) {
+#     print(glue::glue("  - {ft}"))
 # }
 sink()
 sink(type = "message")
@@ -331,8 +355,8 @@ for (i in 1:length(budgets)) {
 
     # START LOGGING
     file <- file(
-        file.path(dir_logs, str_glue("log{i}_", {info_str}, ".txt")),
-        open = "wt")
+                 file.path(dir_logs, str_glue("log{i}_", {info_str}, ".txt")),
+                 open = "wt")
     sink(file, append = TRUE)
     sink(file, append = TRUE, type = "message")
 
@@ -350,8 +374,8 @@ for (i in 1:length(budgets)) {
         # Format previous solution for locked-in constraint
         prev <- solutions[[i - 1]]
         prev_mod <- cbind(prev[, 1:2],
-                           sapply(prev[, 3],
-                                  FUN = \(x) if_else(x == 1, TRUE, FALSE)))
+                          sapply(prev[, 3],
+                                 FUN = \(x) if_else(x == 1, TRUE, FALSE)))
         # Update problem
         p2 <- p |>
             add_min_shortfall_objective(budget = b_cells) |>
@@ -365,7 +389,7 @@ for (i in 1:length(budgets)) {
                 gap = opt_gap,
                 threads = opt_threads,
                 verbose = TRUE
-                )
+            )
     } else if (solver == "lp") {
         p2 <- p2 |>
             add_lpsymphony_solver(
@@ -377,7 +401,18 @@ for (i in 1:length(budgets)) {
     # Solve problem (and time it)
     print("Solving...")
     start <- Sys.time()
-    s <- solve(p2, run_checks = FALSE)
+    s <- try(solve(p2, run_checks = FALSE))
+    if (inherits(s, "try-error")) {
+        print("FAILED, running again")
+        s <- try(solve(p2, run_checks = FALSE))
+        if (inherits(s, "try-error")) {
+            pritn("FAILED twice, ending...")
+            sink()
+            sink(type = "message")
+            close(file)
+            print("FAILED twice ... logging ended")
+        }
+    }
     end <- Sys.time()
 
 
@@ -410,27 +445,28 @@ for (i in 1:length(budgets)) {
 # 7. Output solutions ====
 ## 7.1 Combine solutions into one 'ranked' solution ====
 print("Combining solutions...")
-combined_solution <- solutions |>
-    reduce(left_join, by = "id") |>
+joined_solution <- solutions |>
+    reduce(left_join, by = "id") |> 
     select(-starts_with("cost")) |>
-    rowwise() |>
-    mutate(
-        final = sum(c_across(starts_with("solution")))
-    ) |>
-    select(id, final) |>
-    tibble() |>
+    setDT()
+combined_solution <- joined_solution[, `:=` (final = rowSums(.SD)),
+                               .SDcols = !c("id")
+                               ][, .(id, final)]
+combined_solution <- combined_solution |>
     left_join(select(grid_cell, c("id", "x", "y")), by = "id") |>
     write_csv(file.path(dir_output, glue::glue("solution_full_", info_str, ".csv")))
 
 ## 7.2 Convert matrix to raster ====
-r <- rast(combined_solution[, c("x", "y", "final")],
-          crs = crs(EPSG),
-          extent = ext(rast_template)
+r <- rast(
+    combined_solution[, c("x", "y", "final")],
+    crs = crs(EPSG),
+    extent = ext(rast_template
+    )
 )
 
 writeRaster(r,
             file.path(dir_output, glue::glue("solution_full_", info_str, ".tif")),
-            overwrite = T)
+            overwrite = TRUE)
 
 times_df <- write.csv(solution_details,
                       file.path(dir_logs, glue::glue("details_", info_str, ".csv")))
