@@ -172,9 +172,9 @@ if (split) {
 add_feat <- function(feat, feat_master) {
     # If split == FALSE, then max() returns -Inf,
     #   so need to set species_id_start to 0 for the iterative id to work
-    species_id_start = ifelse(max(feat_master$species, na.rm = TRUE) == -Inf,
-                         0,
-                         max(feat_master$species, na.rm = TRUE))
+    species_id_start <- ifelse(max(feat_master$species, na.rm = TRUE) == -Inf,
+                               0,
+                               max(feat_master$species, na.rm = TRUE))
     row <- data.frame(
         name = feat,
         species = species_id_start + 1
