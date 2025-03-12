@@ -121,7 +121,6 @@ if (!split) {
                                         to = c(0, 1),
                                         from = c(0, max(.x, na.rm = TRUE)))
             )
-
         )
 
 } else if (split) {
