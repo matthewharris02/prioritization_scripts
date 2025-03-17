@@ -359,7 +359,7 @@ for (i in 1:length(budgets)) {
     glue::glue("= Starting budget {budgets[i]} =") |> print()
     # Create budget information
     b <- budgets[i]
-    b_cells <- b * sum(costs[, 2], na.rm = T)
+    b_cells <- b * sum(costs[, 2], na.rm = TRUE)
 
 
     # Sort problem depending on budget
