@@ -120,7 +120,6 @@ if (!split) {
                                         to = c(0, 1),
                                         from = c(0, max(.x, na.rm = TRUE)))
             )
-
         )
 
 } else if (split) {
@@ -178,9 +177,9 @@ if (split) {
 add_feat <- function(feat, feat_master) {
     # If split == FALSE, then max() returns -Inf,
     #   so need to set species_id_start to 0 for the iterative id to work
-    species_id_start = ifelse(max(feat_master$species, na.rm = TRUE) == -Inf,
-                         0,
-                         max(feat_master$species, na.rm = TRUE))
+    species_id_start <- ifelse(max(feat_master$species, na.rm = TRUE) == -Inf,
+                               0,
+                               max(feat_master$species, na.rm = TRUE))
     row <- data.frame(
         name = feat,
         species = species_id_start + 1
@@ -274,7 +273,20 @@ if (opt_ecoregions) {
     targets_ecoregions <- ecoregions_data |>
         filter(!is.na(realised_extent)) |>
         mutate(
+<<<<<<< HEAD
             target = (1 - remnant_proportion)
+=======
+            target = (1 - remnant_proportion) |>
+                scales::rescale(
+                    from = c(0, 1),
+                    to   = c(0.10, 0.30)
+                ),
+            target = case_when(
+                target >= 0.3 ~ 0.3,
+                target < 0.3 & target > 0.1 ~ target,
+                target <= 0.1 ~ 0.1
+            )
+>>>>>>> c663ed47e8bef964dfe981375a7bfe031938ee6e
         ) |>
         rename(
             relative_target = target,
