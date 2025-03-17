@@ -369,7 +369,7 @@ if (pp_ft_vec) {
         writeRaster(file.path(dir_out, "features", fn_template("ft_saltmarshes")),
                     overwrite = TRUE)
     # Prepare vector features that want attribute values
-    prepare_ft_v_raw("ft_coastal", "coastal_potential_cur", "mean")
+    prepare_ft_v_raw("ft_coastal", "coastal_deficit_cur", "mean")
 
 
 }
