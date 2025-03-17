@@ -275,16 +275,7 @@ if (opt_ecoregions) {
     targets_ecoregions <- ecoregions_data |>
         filter(!is.na(realised_extent)) |>
         mutate(
-            target = (1 - remnant_proportion) |>
-                scales::rescale(
-                    from = c(0.20, 0.75),
-                    to   = c(0.10, 0.30)
-                ),
-            target = case_when(
-                target >= 0.3 ~ 0.3,
-                target < 0.3 & target > 0.1 ~ target,
-                target <= 0.1 ~ 0.1
-            )
+            target = (1 - remnant_proportion)
         ) |>
         rename(
             relative_target = target,
