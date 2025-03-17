@@ -140,6 +140,12 @@ if (!split) {
         lapply(function(filename) { read_parquet(filename) }) |>
         do.call(rbind, args = _)
 
+    ft_split <- ft_split[, c("amount") :=
+                             scales::rescale(amount,
+                                             to = c(0, 1),
+                                             from = c(0, max(amount, na.rm = TRUE))),
+                         by = species]
+
 }
 
 
