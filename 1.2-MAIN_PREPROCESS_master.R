@@ -18,11 +18,6 @@
 #   - Set gdalwarp_path and gdalcalc_path
 ##%##########################################################################%##
 
-# Sys.setenv(PATH="/home/science/miniforge3/condabin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin")
-# library(reticulate)
-# use_condaenv("matthew")
-
-
 ##%##########################################################################%##
 # 0.1 MAKE CHANGES HERE ====
 ## Set working directory ====
