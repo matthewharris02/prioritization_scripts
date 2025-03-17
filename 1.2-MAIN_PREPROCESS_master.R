@@ -1,6 +1,5 @@
 ##%##########################################################################%##
 #       Script for pre-processing for spatial prioritization                   #
-#                    Matthew Harris and Vignesh Kamath                         #
 ##%##########################################################################%##
 # REQUIRED packages:
 #       - sf, terra, tidyverse, arrow, data.table, tictoc, prioritzr, glue

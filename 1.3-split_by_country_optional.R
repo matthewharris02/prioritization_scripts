@@ -1,6 +1,5 @@
 ##%##########################################################################%##
-#       Split features by country (i.e., assign id to each country-feature)         #
-#           V 02.08.2024    Matthew Harris and Vignesh Kamath                  #
+#       Split features by country (i.e., assign id to each country-feature)    #
 ##%##########################################################################%##
 
 ##%##########################################################################%##

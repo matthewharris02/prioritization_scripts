@@ -1,7 +1,6 @@
 ##%##########################################################################%##
 #          Multi-budget spatial prioritisation (min_shortfall)                 #
 #                  with easy exclusion of features                             #
-#                  Matthew Harris and Vignesh Kamath                           #
 ##%##########################################################################%##
 #   REMINDERS:                                                                 #
 #       - CHECK the dir_wd                                                     #

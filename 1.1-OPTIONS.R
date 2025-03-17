@@ -1,6 +1,5 @@
 ##%##########################################################################%##
 #           Set up options to be shared between scripts                        #
-#           V 30.08.2024    Matthew Harris and Vignesh Kamath                  #
 ##%##########################################################################%##
 # RESOLUTION ====
 # Set shared resolution for all layers
