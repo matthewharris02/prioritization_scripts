@@ -19,23 +19,25 @@ runid <- ""           # Additional ID to distinguish runs
 ## 1.2 Shared options ====
 # Load options file to share options with pre-processing
 source(file.path(dir_src, "script_tools/1.1-OPTIONS_20.R"))
+source(file.path(dir_src, "script_tools/3.0-helper_functions.R"))
 
 ## 1.4 Directory-related variables ====
-dir_output <- \(x) file.path(dir_out, "output", ifelse(x == "", "default", x))
 dir_analyze <- file.path(dir_out, "analysis", "compare")
 
+# 2. ANALYSIS ====
+# LOAD SOLUTIONS ====
 base <- rast(file.path(dir_output("default"), "solution_full_lp_20km_0.01g_1t_1b.tif"))
 noCarbon <- rast(file.path(dir_output("noCarbon"), "solution_full_lp_20km_0.01g_1t_1b.tif"))
 noEco <- rast(file.path(dir_output("noEco"), "solution_full_lp_20km_0.01g_1t_1b.tif"))
 noUsefulPlants <- rast(file.path(dir_output("noUsefulPlants"), "solution_full_lp_20km_0.01g_1t_1b.tif"))
 
-# 2. ANALYSIS ====
 ## Cross tabulate so see how many differences ====
 combined <- c(c(base, noCarbon, noEco, noUsefulPlants))
 names(combined) <- c("default", "noCarbon", "noEco", "noUsefulPlants")
 
 compare_carbon <- crosstab(subset(combined, 1:2), long = TRUE)
 compare_eco <- crosstab(subset(combined, c(1, 3)), long = TRUE)
+compare_eco <- crosstab(subset(combined, c(1, 3)))
 compare_up <- crosstab(subset(combined, c(1, 4)), long = TRUE)
 
 compare_all <- left_join(compare_carbon, compare_eco,
@@ -59,3 +61,19 @@ carbon_20 <- top20(noCarbon)
 
 compare <- base_20 + carbon_20
 writeRaster(compare, file.path(dir_analyze, "compare_top20_carbon.tif"))
+
+
+## Subtract layers ====
+sol_default <- load_sol1("default")
+sol_noEco <- load_sol1("noEco")
+sol_newEco <- load_sol2("newEcor")
+
+dif_default_noEco <- sol_default - sol_noEco
+dif_noEco_newEco <- sol_noEco - sol_newEco
+
+writeRaster(dif_default_noEco, file.path(dir_analyze, "dif_default_noEco.tif"))
+writeRaster(dif_noEco_newEco, file.path(dir_analyze, "dif_noEco_newEco.tif"))
+
+
+
+dif_default_noEco2 <- sol_default*100 + sol_noEco

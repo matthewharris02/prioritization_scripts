@@ -18,7 +18,7 @@ runid <- ""           # Additional ID to distinguish runs
 
 ## 1.2 Shared options ====
 # Load options file to share options with pre-processing
-source(file.path(dir_src, "script_tools/1.1-OPTIONS.R"))
+source(file.path(dir_src, "script_tools/1.1-OPTIONS_20.R"))
 
 
 ## 1.4 Directory-related variables ====
@@ -44,13 +44,29 @@ fn_template <- function(name, extra = "", ext = ".tif") {
 }
 
 # 2. Restorable Land Stats ====
-lulc_other <- rast(file.path(dir_pu, fn_template("lulc_other"))) # 0 = restorable
-lulc_converted <- rast(file.path(dir_pu, fn_template("lulc_converted"))) # 0 = restorable
+lulc_other <- rast(file.path(dir_pu, fn_template("lulc_other"))) # 1 = restorable
+lulc_converted <- rast(file.path(dir_pu, fn_template("lulc_converted"))) # 1 = restorable
 hfp_intermediate <- rast(file.path(dir_pu, fn_template("hfp_mask"))) # 1 = restorable
 restorable <- rast(file.path(dir_pu, fn_template("restorable_land"))) # 0 = restorable
+countries <- rast(file.path(dir_pu, fn_template("countries_mask")))
 
-hfp_area <- global(hfp_intermediate, "sum", na.rm = TRUE)
 
-restorable_area <- (restorable + 1)  |>
-    classify(cbind(2, 0)) |>
-    global("sum", na.rm = TRUE)
+full_area <- global(countries, "sum", na.rm = TRUE)
+restorable_area <- global(restorable, "sum", na.rm=TRUE)
+prop_restorable <- restorable_area / full_area
+
+
+restorable_lulcOther <- restorable + lulc_other
+
+exclude_other <- (lulc_other + 1) |> 
+    classify(cbind(2, 0)) + countries -1
+exclude_other_area <- global(exclude_other, "sum", na.rm = TRUE)
+
+
+exclude_converted <- (lulc_converted + 1) |> 
+    classify(cbind(2,0)) + countries - 1
+exclude_converted_area <- global(exclude_converted, "sum", na.rm = TRUE)
+
+exclude_hfp <- (hfp_intermediate + 1) |> 
+    classify(cbind(2,0)) + countries - 1
+exclude_hfp_area <- global(exclude_hfp, "sum", na.rm = TRUE)
