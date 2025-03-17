@@ -315,7 +315,6 @@ p <- problem(
     add_relative_targets(targets)
 
 budgets <- seq(0.05, 1, 0.05)
-budgets <- seq(0.1, 1, 0.1)
 solutions <- list() # Solutions for each budget
 times <- list() # Problem solving times
 
