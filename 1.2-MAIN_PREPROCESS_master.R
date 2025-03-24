@@ -1,6 +1,5 @@
 ##%##########################################################################%##
 #       Script for pre-processing for spatial prioritization                   #
-#                    Matthew Harris and Vignesh Kamath                         #
 ##%##########################################################################%##
 # REQUIRED packages:
 #       - sf, terra, tidyverse, arrow, data.table, tictoc, prioritzr, glue
@@ -17,11 +16,6 @@
 #       if it is the same RES
 #   - Set gdalwarp_path and gdalcalc_path
 ##%##########################################################################%##
-
-# Sys.setenv(PATH="/home/science/miniforge3/condabin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin")
-# library(reticulate)
-# use_condaenv("matthew")
-
 
 ##%##########################################################################%##
 # 0.1 MAKE CHANGES HERE ====
@@ -369,7 +363,7 @@ if (pp_ft_vec) {
         writeRaster(file.path(dir_out, "features", fn_template("ft_saltmarshes")),
                     overwrite = TRUE)
     # Prepare vector features that want attribute values
-    prepare_ft_v_raw("ft_coastal", "coastal_potential_cur", "mean")
+    prepare_ft_v_raw("ft_coastal", "coastal_deficit_cur", "mean")
 
 
 }

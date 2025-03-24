@@ -10,7 +10,7 @@ library(viridisLite)
 dir_wd <- "/mnt/sda/MH_restoration"
 dir_src <- dir_wd
 runid <- ""           # Additional ID to distinguish runs
-source(file.path(dir_src, "script_tools/1.1-OPTIONS.R"))
+source(file.path(dir_src, "script_tools/1.1-OPTIONS_20.R"))
 dir_output <- file.path(dir_out, "output", ifelse(runid == "", "default", runid))
 
 rast_template <- rast(

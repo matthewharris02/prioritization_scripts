@@ -1,7 +1,6 @@
 ##%##########################################################################%##
 #          Multi-budget spatial prioritisation (min_shortfall)                 #
 #                  with easy exclusion of features                             #
-#                  Matthew Harris and Vignesh Kamath                           #
 ##%##########################################################################%##
 #   REMINDERS:                                                                 #
 #       - CHECK the dir_wd                                                     #
@@ -121,7 +120,6 @@ if (!split) {
                                         to = c(0, 1),
                                         from = c(0, max(.x, na.rm = TRUE)))
             )
-
         )
 
 } else if (split) {
@@ -139,6 +137,12 @@ if (!split) {
     ft_split <- paste0(file.path(dir_proc, "split"), "/", ft_national, ".parquet") |>
         lapply(function(filename) { read_parquet(filename) }) |>
         do.call(rbind, args = _)
+
+    ft_split <- ft_split[, c("amount") :=
+                             scales::rescale(amount,
+                                             to = c(0, 1),
+                                             from = c(0, max(amount, na.rm = TRUE))),
+                         by = species]
 
 }
 
@@ -173,9 +177,9 @@ if (split) {
 add_feat <- function(feat, feat_master) {
     # If split == FALSE, then max() returns -Inf,
     #   so need to set species_id_start to 0 for the iterative id to work
-    species_id_start = ifelse(max(feat_master$species, na.rm = TRUE) == -Inf,
-                         0,
-                         max(feat_master$species, na.rm = TRUE))
+    species_id_start <- ifelse(max(feat_master$species, na.rm = TRUE) == -Inf,
+                               0,
+                               max(feat_master$species, na.rm = TRUE))
     row <- data.frame(
         name = feat,
         species = species_id_start + 1
@@ -269,16 +273,7 @@ if (opt_ecoregions) {
     targets_ecoregions <- ecoregions_data |>
         filter(!is.na(realised_extent)) |>
         mutate(
-            target = (1 - remnant_proportion) |>
-                scales::rescale(
-                    from = c(0, 1),
-                    to   = c(0.10, 0.30)
-                ),
-            target = case_when(
-                target >= 0.3 ~ 0.3,
-                target < 0.3 & target > 0.1 ~ target,
-                target <= 0.1 ~ 0.1
-            )
+            target = (1 - remnant_proportion)
         ) |>
         rename(
             relative_target = target,
@@ -318,7 +313,6 @@ p <- problem(
     add_relative_targets(targets)
 
 budgets <- seq(0.05, 1, 0.05)
-budgets <- seq(0.1, 1, 0.1)
 solutions <- list() # Solutions for each budget
 times <- list() # Problem solving times
 
@@ -327,7 +321,7 @@ info_str <- paste0("{solver}_{RES}km_{opt_gap}g_{opt_threads}t_{budgets[i]}b",
                    ifelse(runid == "", "default", runid))
 
 
-f <- file(file.path(dir_logs, paste0("log0_run_details_", runid, ".txt")), open = "wt")
+f <- file(file.path(dir_logs, paste0("log0_run_details_", glue(info_str), ".txt")), open = "wt")
 sink(f, append = TRUE)
 sink(f, append = TRUE, type = "message")
 print(glue::glue("== Details for run: {runid} == "))
@@ -363,7 +357,7 @@ for (i in 1:length(budgets)) {
     glue::glue("= Starting budget {budgets[i]} =") |> print()
     # Create budget information
     b <- budgets[i]
-    b_cells <- b * sum(costs[, 2], na.rm = T)
+    b_cells <- b * sum(costs[, 2], na.rm = TRUE)
 
 
     # Sort problem depending on budget
