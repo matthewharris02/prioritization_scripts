@@ -16,6 +16,7 @@ library(arrow)
 library(tidyverse)
 library(scales)
 library(terra)
+library(glue)
 
 # 1. OPTIONS and set-up ====
 ## 1.1 EDITABLE options ====
