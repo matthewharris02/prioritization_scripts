@@ -317,7 +317,7 @@ solutions <- list() # Solutions for each budget
 times <- list() # Problem solving times
 
 # Template string with basic info on solution for using with glue::glue later
-info_str <- paste0("{solver}_{RES}km_{opt_gap}g_{opt_threads}t_{budgets[i]}b",
+info_str <- paste0("{solver}_{RES}km_{opt_gap}g_{opt_threads}t_{budgets[i]}b_",
                    ifelse(runid == "", "default", runid))
 
 
