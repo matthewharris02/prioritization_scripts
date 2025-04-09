@@ -449,7 +449,11 @@ combined_solution <- joined_solution[, `:=` (final = rowSums(.SD)),
                                ][, .(id, final)]
 combined_solution <- combined_solution |>
     left_join(select(grid_cell, c("id", "x", "y")), by = "id") |>
-    write_csv(file.path(dir_output, glue::glue("solution_full_", info_str, ".csv")))
+    write_csv(file.path(dir_output,
+                        glue::glue("solution_full_{solver}_{RES}km_{opt_gap}g_{opt_threads}t_",
+                                   ifelse(runid == "", "default", runid),
+                                   ".csv")
+                                   ))
 
 ## 7.2 Convert matrix to raster ====
 r <- rast(
