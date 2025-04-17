@@ -437,7 +437,7 @@ for (i in 1:length(budgets)) {
     sink(type = "message")
     close(file)
 
-    print(glue::glue("Solving took {end-start} seconds long...!"))
+    print(glue::glue("Solving took {as.numeric((end - start), units = 'secs')} seconds long...!"))
 } # FOR budget
 
 # 7. Output solutions ====
