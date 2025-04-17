@@ -16,6 +16,7 @@ library(arrow)
 library(tidyverse)
 library(scales)
 library(terra)
+library(glue)
 
 # 1. OPTIONS and set-up ====
 ## 1.1 EDITABLE options ====
@@ -317,11 +318,11 @@ solutions <- list() # Solutions for each budget
 times <- list() # Problem solving times
 
 # Template string with basic info on solution for using with glue::glue later
-info_str <- paste0("{solver}_{RES}km_{opt_gap}g_{opt_threads}t_{budgets[i]}b",
+info_str <- paste0("{solver}_{RES}km_{opt_gap}g_{opt_threads}t_{budgets[i]}b_",
                    ifelse(runid == "", "default", runid))
 
 
-f <- file(file.path(dir_logs, paste0("log0_run_details_", glue(info_str), ".txt")), open = "wt")
+f <- file(file.path(dir_logs, paste0("log0_run_details_", ifelse(runid == "", "default", runid), ".txt")), open = "wt")
 sink(f, append = TRUE)
 sink(f, append = TRUE, type = "message")
 print(glue::glue("== Details for run: {runid} == "))
@@ -448,7 +449,11 @@ combined_solution <- joined_solution[, `:=` (final = rowSums(.SD)),
                                ][, .(id, final)]
 combined_solution <- combined_solution |>
     left_join(select(grid_cell, c("id", "x", "y")), by = "id") |>
-    write_csv(file.path(dir_output, glue::glue("solution_full_", info_str, ".csv")))
+    write_csv(file.path(dir_output,
+                        glue::glue("solution_full_{solver}_{RES}km_{opt_gap}g_{opt_threads}t_",
+                                   ifelse(runid == "", "default", runid),
+                                   ".csv")
+                                   ))
 
 ## 7.2 Convert matrix to raster ====
 r <- rast(
@@ -459,8 +464,16 @@ r <- rast(
 )
 
 writeRaster(r,
-            file.path(dir_output, glue::glue("solution_full_", info_str, ".tif")),
+            file.path(dir_output,
+                        glue::glue("solution_full_{solver}_{RES}km_{opt_gap}g_{opt_threads}t_",
+                                   ifelse(runid == "", "default", runid),
+                                   ".csv")
+                                   ),
             overwrite = TRUE)
 
 times_df <- write.csv(solution_details,
-                      file.path(dir_logs, glue::glue("details_", info_str, ".csv")))
+                      file.path(dir_logs,
+                        glue::glue("solution_full_{solver}_{RES}km_{opt_gap}g_{opt_threads}t_",
+                                   ifelse(runid == "", "default", runid),
+                                   ".csv")
+                                   ))

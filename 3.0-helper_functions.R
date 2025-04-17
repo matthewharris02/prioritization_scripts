@@ -9,7 +9,7 @@ load_sol1 <- function(runid, type = "tif") {
 
 # Helper to load solution, WITH runid in filename
 load_sol2 <- function(runid, type = "tif") {
-    fn <- file.path(dir_output(runid), glue::glue("solution_full_lp_20km_0.01g_1t_1b_{runid}.{type}"))
+    fn <- file.path(dir_output(runid), glue::glue("solution_full_lp_20km_0.01g_1t_{runid}.{type}"))
     if (type == "tif") rast(fn)
     if (type == "csv") read_csv(fn)
 }
