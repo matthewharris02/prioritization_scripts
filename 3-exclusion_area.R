@@ -61,4 +61,4 @@ comb_plant <- ifel( (comb_class == 2 | comb_class == 3 | comb_class == 6) & plan
 
 # Write outputs
 writeRaster(comb_class, file.path(dir_analyze, "exclusion_reason.tif"), overwrite = TRUE)
-writeRaster(out, file.path(dir_analyze, "exclusion_reasonPlant.tif"), overwrite = TRUE)
+writeRaster(comb_plant, file.path(dir_analyze, "exclusion_reasonPlant.tif"), overwrite = TRUE)
