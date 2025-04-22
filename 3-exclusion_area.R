@@ -19,7 +19,7 @@ runid <- ""           # Additional ID to distinguish runs
 
 ## 1.2 Shared options ====
 # Load options file to share options with pre-processing
-source(file.path(dir_src, "script_tools/1.1-OPTIONS_20.R"))
+source(file.path(dir_src, "script_tools/1.1-OPTIONS.R"))
 
 ## 1.4 Directory-related variables ====
 dir_analyze <- file.path(dir_out, "analysis", "compare")

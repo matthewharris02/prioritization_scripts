@@ -4,7 +4,7 @@
 # RESOLUTION ====
 # Set shared resolution for all layers
 # Relative to 1km at equator (or 30 arcseconds in non-equal area projection)
-RES <- 5
+RES <- 30
 
 # PROJECTION ====
 # Set EPSG to the EPSG code (e.g., EPSG:4326, ESRI:54009)
@@ -23,11 +23,16 @@ EXT <- c(-18040000, 18040000, -9020000, 9020000)
 hfp_lower <- 3
 hfp_upper <- 50 # Set to maximum so there is no upper
 
-
-# Directories ====
-# Directories within the working directory
-dir_out <- file.path(dir_wd, "work_in_progress", paste0(RES, "km"))
-dir_features <- file.path(dir_out, "features")
-dir_pu <- file.path(dir_out, "planning_units")
-dir_proc <- file.path(dir_out, "processed")
-dir_inter <- file.path(dir_out, "intermediate_outputs")
+# Helper function to create named list of directory variables for multiple dir_ids
+create_info <- function(dir_out) {
+    tribble(
+        ~vars,           ~dirs,
+        "dir_out",        dir_out,
+        "dir_ft",         file.path(dir_out, "features"),
+        "dir_pu",         file.path(dir_out, "planning_units"),
+        "dir_proc",       file.path(dir_out, "processed"),
+        "dir_inter",      file.path(dir_out, "intermediate_outputs"),
+        "dir_analyze",    file.path(dir_out, "analysis"),
+    ) |>
+        deframe()
+}

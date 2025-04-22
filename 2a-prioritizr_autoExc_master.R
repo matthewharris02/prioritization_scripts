@@ -25,7 +25,7 @@ dir_wd <- "/mnt/sda/MH_restoration"
 dir_src <- dir_wd
 ### Prioritzr-related options ====
 write_each <- TRUE    # If TRUE, writes solution for each budget
-solver <- "lp"        # Which solver: cbc, (lp)symphony
+solver <- "cbc"        # Which solver: cbc, (lp)symphony
 opt_gap <- 0.01       # Choose gap for solver
 opt_threads <- 1      # Choose number of threads (ONLY for CBC solver)
 
@@ -52,11 +52,21 @@ if (solver == "cbc") {
 
 ## 1.4 Directory-related variables ====
 dir_in <- file.path(dir_wd, "raw")
-dir_output <- file.path(dir_out, "output", ifelse(runid == "", "default", runid))
-dir_logs <- file.path(dir_out, "logs", ifelse(runid == "", "default",runid))
+dir_id <- "test"
+dir_out <- file.path(dir_wd, "work_in_progress",
+                     paste0(RES, "km",
+                         ifelse(dir_id == "", "", paste0("_", dir_id))
+                     ))
+
+dir_in <- file.path(dir_wd, "raw")
+
+dirs <- create_info(dir_out)
+
+dirs["dir_output"] <- dir_output <- file.path(dirs["dir_out"], "output", ifelse(runid == "", "default", runid))
+dirs["dir_logs"] <- file.path(dirs["dir_out"], "logs", ifelse(runid == "", "default",runid))
 
 if (auto_dir) {
-    c(dir_output, dir_logs) |>
+    c(dirs) |>
         walk(\(x) if(!dir.exists(x)) { dir.create(x, recursive = TRUE)})
 }
 
@@ -103,7 +113,7 @@ if (opt_ecoregions) {col_ecoregions <- "ecoregions"}
 
 if (!split) {
 
-    grid_cell <- open_dataset(file.path(dir_proc, "global_cells"),
+    grid_cell <- open_dataset(file.path(dirs["dir_proc"], "global_cells"),
                               partitioning = c("ISONUM")) |>
         select(id, x, y, any_of(col_ecoregions), all_of(ft_all)) |>
         mutate(
@@ -126,7 +136,7 @@ if (!split) {
 } else if (split) {
 
 
-    grid_cell <- open_dataset(file.path(dir_proc, "global_cells"),
+    grid_cell <- open_dataset(file.path(dirs["dir_proc"], "global_cells"),
                               partitioning = c("ISONUM")) |>
         select(id, x, y, any_of(col_ecoregions), all_of(ft_global)) |>
         mutate(
@@ -135,7 +145,7 @@ if (!split) {
         ) |>
         collect()
 
-    ft_split <- paste0(file.path(dir_proc, "split"), "/", ft_national, ".parquet") |>
+    ft_split <- paste0(file.path(dirs["dir_proc"], "split"), "/", ft_national, ".parquet") |>
         lapply(function(filename) { read_parquet(filename) }) |>
         do.call(rbind, args = _)
 
@@ -158,7 +168,7 @@ if (is.null(drop_feature)) {exclude_feature <- "^$"}
 feat_master <- data.frame(name = NULL, species = NULL)
 # Get feature ids for the split-by-country features
 if (split) {
-    feat_ids_split <- list.files(file.path(dir_proc, "split"),
+    feat_ids_split <- list.files(file.path(dirs["dir_proc"], "split"),
                                  pattern = "*.csv", full.names = TRUE)
 
     feat_ids_split <- feat_ids_split[!grepl(exclude_feature, feat_ids_split)] |>
@@ -201,7 +211,7 @@ feat_ft <- feat_master
 if (opt_ecoregions) {
     # Prepare ecoregion features
 
-    ecoregions_data <- read_csv(file.path(dir_pu, "global_ecoregions_moll.csv"))
+    ecoregions_data <- read_csv(file.path(dirs["dir_pu"], "global_ecoregions_moll.csv"))
 
     feat_ecoregions <- ecoregions_data |>
         filter(!is.na(realised_extent)) |>
@@ -269,7 +279,7 @@ if (split) {
 # 5. Targets ====
 ## 5.1  Ecoregion targets ====
 if (opt_ecoregions) {
-    ecoregions_data <- read_csv(file.path(dir_pu, "global_ecoregions_moll.csv"))
+    ecoregions_data <- read_csv(file.path(dirs["dir_pu"], "global_ecoregions_moll.csv"))
 
     targets_ecoregions <- ecoregions_data |>
         filter(!is.na(realised_extent)) |>
@@ -322,7 +332,7 @@ info_str <- paste0("{solver}_{RES}km_{opt_gap}g_{opt_threads}t_{budgets[i]}b_",
                    ifelse(runid == "", "default", runid))
 
 
-f <- file(file.path(dir_logs, 
+f <- file(file.path(dirs["dir_logs"], 
               paste0(glue("log0_run_details_{solver}_{RES}km_{opt_gap}g_{opt_threads}t_"),
                      ifelse(runid == "", "default", runid), ".txt")
           ), open = "wt")
@@ -353,7 +363,7 @@ for (i in 1:length(budgets)) {
 
     # START LOGGING
     file <- file(
-                 file.path(dir_logs, str_glue("log{i}_", {info_str}, ".txt")),
+                 file.path(dirs["dir_logs"], str_glue("log{i}_", {info_str}, ".txt")),
                  open = "wt")
     sink(file, append = TRUE)
     sink(file, append = TRUE, type = "message")
@@ -429,7 +439,7 @@ for (i in 1:length(budgets)) {
     print(glue::glue("Solving took {as.numeric((end - start), units = 'secs')} seconds long...!"))
 
     if (write_each == TRUE) {
-        fwrite(s, file.path(dir_output, glue::glue("solution_single_", info_str, ".csv")))
+        fwrite(s, file.path(dirs["dir_output"], glue::glue("solution_single_", info_str, ".csv")))
     } # IF write_each
 
     # END LOGGING
@@ -452,7 +462,7 @@ combined_solution <- joined_solution[, `:=` (final = rowSums(.SD)),
                                ][, .(id, final)]
 combined_solution <- combined_solution |>
     left_join(select(grid_cell, c("id", "x", "y")), by = "id") |>
-    write_csv(file.path(dir_output,
+    write_csv(file.path(dirs["dir_output"],
                         glue::glue("solution_full_{solver}_{RES}km_{opt_gap}g_{opt_threads}t_",
                                    ifelse(runid == "", "default", runid),
                                    ".csv")
@@ -467,7 +477,7 @@ r <- rast(
 )
 
 writeRaster(r,
-            file.path(dir_output,
+            file.path(dirs["dir_output"],
                         glue::glue("solution_full_{solver}_{RES}km_{opt_gap}g_{opt_threads}t_",
                                    ifelse(runid == "", "default", runid),
                                    ".csv")
@@ -475,7 +485,7 @@ writeRaster(r,
             overwrite = TRUE)
 
 times_df <- write.csv(solution_details,
-                      file.path(dir_logs,
+                      file.path(dirs["dir_logs"],
                         glue::glue("solution_full_{solver}_{RES}km_{opt_gap}g_{opt_threads}t_",
                                    ifelse(runid == "", "default", runid),
                                    ".csv")
