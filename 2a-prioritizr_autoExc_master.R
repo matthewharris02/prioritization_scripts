@@ -322,7 +322,10 @@ info_str <- paste0("{solver}_{RES}km_{opt_gap}g_{opt_threads}t_{budgets[i]}b_",
                    ifelse(runid == "", "default", runid))
 
 
-f <- file(file.path(dir_logs, paste0("log0_run_details_", ifelse(runid == "", "default", runid), ".txt")), open = "wt")
+f <- file(file.path(dir_logs, 
+              paste0(glue("log0_run_details_{solver}_{RES}km_{opt_gap}g_{opt_threads}t_"),
+                     ifelse(runid == "", "default", runid), ".txt")
+          ), open = "wt")
 sink(f, append = TRUE)
 sink(f, append = TRUE, type = "message")
 print(glue::glue("== Details for run: {runid} == "))
@@ -434,7 +437,7 @@ for (i in 1:length(budgets)) {
     sink(type = "message")
     close(file)
 
-    print(glue::glue("Solving took {end-start} seconds long...!"))
+    print(glue::glue("Solving took {as.numeric((end - start), units = 'secs')} seconds long...!"))
 } # FOR budget
 
 # 7. Output solutions ====
