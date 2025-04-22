@@ -37,13 +37,13 @@ other <- rast(file.path(dir_pu, fn_template("lulc_other")))
 builtCrops <- rast(file.path(dir_pu, fn_template("lulc_converted_noPlant")))
 
 # Calculate which pixels are excluded when planted trees are added
-plant <- (1 - conv) - (1 - builtCrops) 
+plant <- (1 - conv) - (1 - builtCrops)
 
 # Create combined layer
 comb <- (1 - hfp) * 100 + (1-conv) * 10 + (1-other)
 
 # Reclassify exclusion reasons
-comb_class <- comb |> 
+comb_class <- comb |>
     classify(
         tribble(
             ~is,   ~becomes,
