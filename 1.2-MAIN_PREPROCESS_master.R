@@ -86,12 +86,20 @@ source(file.path(dir_src, "script_tools/0.9-helper_functions.R"))
 #     - raw                 | raw input data (i.e., downloaded data)
 #     - script_tools        | these scripts
 #     - work_in_progress    | output data (both from pre-processing, and final)
+dir_id <- ""
+dir_out <- file.path(dir_wd, "work_in_progress",
+                     paste0(RES, "km",
+                         ifelse(dir_id == "", "", paste0("_", dir_id))
+                     ))
+
 dir_in <- file.path(dir_wd, "raw")
+
+dirs <- create_info(dir_out)
 
 if (auto_dir) {
     if (!dir.exists(dir_out)) dir.create(dir_out, recursive = TRUE)
     walk(
-        c(dir_features, dir_pu, dir_proc, dir_inter),
+        c(dirs),
         ~if (!dir.exists(.x)) dir.create(.x, recursive = TRUE)
     )
 }
@@ -142,20 +150,20 @@ if (pp_countries) {
         mutate(
             ISONUM = 1:nrow(.)
         ) |>
-        write_csv(file.path(dir_pu, "global_countries_key.csv"))
+        write_csv(file.path(dirs["dir_pu"], "global_countries_key.csv"))
 
     # Rasterize countries vector with cell value ISO number
     countries_rast <- countries |>
         st_transform(st_crs(EPSG)) |>
         left_join(countries_key, by = join_by("iso3cd" == "ISO3CD")) |>
         rasterize(rast_template, field = "ISONUM") |>
-        writeRaster(file.path(dir_pu, fn_template("countries")),
+        writeRaster(file.path(dirs["dir_pu"], fn_template("countries")),
                     overwrite = TRUE)
 
     # Land mask for countries
     countries_mask <- countries_rast |>
         classify(cbind(-Inf, Inf, TRUE)) |>
-        writeRaster(file.path(dir_pu, fn_template("countries_mask")),
+        writeRaster(file.path(dirs["dir_pu"], fn_template("countries_mask")),
                     overwrite = TRUE)
 }
 
@@ -165,7 +173,7 @@ if (pp_hfp) {
 
     # Reclassify with gdal_calc.py
     ifile <- file.path(dir_in, pu_fn["hfp"])
-    ofile <- file.path(dir_inter, fn_template("hfp_binary"))
+    ofile <- file.path(dirs["dir_inter"], fn_template("hfp_binary"))
 
     # Include/restorable = 1, exclude = 0
     system(glue(
@@ -176,8 +184,8 @@ if (pp_hfp) {
     ))
 
     # Reduce resolution with gdalwarp
-    ifile <- file.path(dir_inter, fn_template("hfp_binary"))
-    ofile <- file.path(dir_pu, fn_template("hfp_mask"))
+    ifile <- file.path(dirs["dir_inter"], fn_template("hfp_binary"))
+    ofile <- file.path(dirs["dir_pu"], fn_template("hfp_mask"))
     system2(
         gdalwarp_path,
         gdalwarp_args("mode", ifile, ofile, EPSG, RES, EXT),
@@ -198,18 +206,18 @@ if (pp_lulc) {
     # Convert fractional cover to correct resolution
     for (fn_lulc in names(fns_lulc)) {
         ifile <- file.path(dir_in, pu_fn[fn_lulc])
-        ofile <- file.path(dir_inter, fn_template(fn_lulc))
+        ofile <- file.path(dirs["dir_inter"], fn_template(fn_lulc))
         args <- gdalwarp_args("average", ifile, ofile, EPSG, RES, EXT, args = "-wm 2G -co GDAL_CACHEMAX=8000")
         print(args)
         system2(gdalwarp_path, args, wait = TRUE)
     }
 
     # Create binary 'other excluded land' (non-converted) raster
-    pwater <- rast(file.path(dir_inter, fn_template("lulc_pwater")))
-    swater <- rast(file.path(dir_inter, fn_template("lulc_swater")))
-    moss <- rast(file.path(dir_inter, fn_template("lulc_moss")))
-    snow <- rast(file.path(dir_inter, fn_template("lulc_snow")))
-    bare <- rast(file.path(dir_inter, fn_template("lulc_bare")))
+    pwater <- rast(file.path(dirs["dir_inter"], fn_template("lulc_pwater")))
+    swater <- rast(file.path(dirs["dir_inter"], fn_template("lulc_swater")))
+    moss <-   rast(file.path(dirs["dir_inter"], fn_template("lulc_moss")))
+    snow <-   rast(file.path(dirs["dir_inter"], fn_template("lulc_snow")))
+    bare <-   rast(file.path(dirs["dir_inter"], fn_template("lulc_bare")))
 
     # [Note to self: Faster through R than gdal_calc here]
     # Include/restorable = 1, exclude = 0
@@ -221,7 +229,7 @@ if (pp_lulc) {
         ),
         right = FALSE # so >= 50
         )
-    writeRaster(lulc_other, file.path(dir_pu, fn_template("lulc_other")), overwrite = TRUE)
+    writeRaster(lulc_other, file.path(dirs["dir_pu"], fn_template("lulc_other")), overwrite = TRUE)
 
 }
 
@@ -233,14 +241,14 @@ if (pp_lulc) {
 plant <- (rast(file.path(dir_in, pu_fn["plant_forests"])) * 100) |>
     classify(cbind(NA, 0)) |>
     project(rast_template, method = "average") |>
-    writeRaster(file.path(dir_pu, fn_template("plant_forests")), overwrite = TRUE)
+    writeRaster(file.path(dirs["dir_pu"], fn_template("plant_forests")), overwrite = TRUE)
 
 
 ### 1.3.4 Converted land raster
 # Converted = built + crop + plantations
-built <- rast(file.path(dir_inter, fn_template("lulc_built")))
-crops <- rast(file.path(dir_inter, fn_template("lulc_crop")))
-plant <- rast(file.path(dir_pu, fn_template("plant_forests")))
+built <- rast(file.path(dirs["dir_inter"], fn_template("lulc_built")))
+crops <- rast(file.path(dirs["dir_inter"], fn_template("lulc_crop")))
+plant <- rast(file.path(dirs["dir_pu"], fn_template("plant_forests")))
 
 # [Note to self: Faster through R than gdal_calc here]
 # Include/restorable = 1, exclude = 0
@@ -253,7 +261,7 @@ converted <- (built + crops + plant) |>
     right = FALSE # so >= 50
     )
 
-writeRaster(converted, file.path(dir_pu, fn_template("lulc_converted")), overwrite = TRUE)
+writeRaster(converted, file.path(dirs["dir_pu"], fn_template("lulc_converted")), overwrite = TRUE)
 
 # Required for building the exclusion reason layer
 built_crop <- (built + crops) |>
@@ -265,20 +273,20 @@ built_crop <- (built + crops) |>
     right = FALSE # so >= 50
     )
 
-writeRaster(built_crop, file.path(dir_pu, fn_template("lulc_converted_noPlant")), overwrite = TRUE)
+writeRaster(built_crop, file.path(dirs["dir_pu"], fn_template("lulc_converted_noPlant")), overwrite = TRUE)
 
 ## 1.4 Create restorable land planning units ====
 if (pp_restorable) {
     print("* Processing Restorable Land *")
-    lulc_other <- rast(file.path(dir_pu, fn_template("lulc_other")))
-    lulc_converted <- rast(file.path(dir_pu, fn_template("lulc_converted")))
-    hfp_intermediate <- rast(file.path(dir_pu, fn_template("hfp_mask")))
+    lulc_other <- rast(file.path(dirs["dir_pu"], fn_template("lulc_other")))
+    lulc_converted <- rast(file.path(dirs["dir_pu"], fn_template("lulc_converted")))
+    hfp_intermediate <- rast(file.path(dirs["dir_pu"], fn_template("hfp_mask")))
     # Include/restorable = 1, exclude = NA
     restorable <- hfp_intermediate |> 
         mask(lulc_other, maskvalue = c(0), updatevalue = NA) |> 
         mask(lulc_converted, maskvalue = c(0), updatevalue = NA) |> 
         classify(cbind(0, NA)) |> 
-        writeRaster(file.path(dir_pu, fn_template("restorable_land")), overwrite = TRUE)
+        writeRaster(file.path(dirs["dir_pu"], fn_template("restorable_land")), overwrite = TRUE)
 
     # TODO: Make output name include the HFP bounds for easy identification
     #   this used to work in old code, but made more general here
@@ -288,19 +296,19 @@ if (pp_restorable) {
 if (pp_ecoregions) {
     print("* Processing ecoregions *")
     # Load LULC not-natural layer as 'modified' land map
-    converted <- rast(file.path(dir_pu, fn_template("lulc_converted")))
+    converted <- rast(file.path(dirs["dir_pu"], fn_template("lulc_converted")))
 
     ecoregions <- st_read(file.path(dir_in, pu_fn["ecoregions2017"]))
     ecoregions_rast <- ecoregions |>
         st_transform(st_crs(EPSG)) |>
         rasterize(rast_template, field = "ECO_ID") |>
         mask(converted) |>
-        writeRaster(file.path(dir_pu, fn_template("ecoregions")),
+        writeRaster(file.path(dirs["dir_pu"], fn_template("ecoregions")),
                     overwrite = TRUE)
 
     remnant <- mask(ecoregions_rast, converted, maskvalue = 0, updatevalue = NA)
     writeRaster(remnant,
-                file.path(dir_pu, fn_template("ecoregionsremnant")),
+                file.path(dirs["dir_pu"], fn_template("ecoregionsremnant")),
                 overwrite = TRUE)
 
     ### 1.5.1 Calculate number of pixels per ecoregion ====
@@ -329,7 +337,7 @@ if (pp_ecoregions) {
         select(ECO_NAME, ECO_ID, BIOME_NAME, realised_extent, potential_extent, remnant_proportion)
 
     print("CSV WRITE...")
-    write_csv(remnant_table, file.path(dir_pu, "global_ecoregions_moll.csv"))
+    write_csv(remnant_table, file.path(dirs["dir_pu"], "global_ecoregions_moll.csv"))
 
     rm(converted, ecoregions, ecoregions_rast, remnant)
 }
@@ -359,7 +367,7 @@ if (pp_ft_vec) {
         st_centroid() |>
         st_transform(st_crs(EPSG)) |>
         rasterize(rast_template, field = "areakm2", fun = "sum") |>
-        writeRaster(file.path(dir_out, "features", fn_template("ft_saltmarshes")),
+        writeRaster(file.path(dirs["dir_ft"], fn_template("ft_saltmarshes")),
                     overwrite = TRUE)
     # Prepare vector features that want attribute values
     prepare_ft_v_raw("ft_coastal", "coastal_deficit_cur", "mean")
@@ -386,7 +394,7 @@ if (pp_ft_ras) {
     for (ft in names(ft_fn_r)) {
         print(paste0("Processing: ", ft, " ..."))
         ifile <- file.path(dir_in, ft_fn_r[ft])
-        ofile <- file.path(dir_features, fn_template(ft))
+        ofile <- file.path(dirs["dir_ft"], fn_template(ft))
         method <- ft_method[ft]
         prepare_ft_r_gdal(ifile, ofile, method, gdalwarp_path)
 
@@ -399,7 +407,7 @@ if (pp_ft_ras) {
 
 if (pp_ft_mask) {
     print("Processing features: masking ====")
-    pu_mask <- rast(file.path(dir_pu, fn_template("restorable_land")))
+    pu_mask <- rast(file.path(dirs["dir_pu"], fn_template("restorable_land")))
 
 
     ft_list <- list.files(dir_features,
@@ -416,7 +424,7 @@ if (pp_ft_mask) {
         map(~mask(.x, pu_mask, maskvalue = c(0, NA))) |>
         walk2(
             .y = file_names,
-            ~writeRaster(.x, file.path(dir_features, paste0(.y, "_mask", ".tif")), overwrite = TRUE)
+            ~writeRaster(.x, file.path(dirs["dir_ft"], paste0(.y, "_mask", ".tif")), overwrite = TRUE)
         )
 
 }
@@ -427,14 +435,14 @@ if (pp_ft_mask) {
 if (pp_cells) {
     print("* Creating grid cells *")
     pu_rast <- c("countries", "lulc_converted", "lulc_other") |>
-        map(~file.path(dir_pu, fn_template(.x))) |>
+        map(~file.path(dirs["dir_pu"], fn_template(.x))) |>
         map(~rast(.x)) |>
         rast()
 
-    pu <- rast(file.path(dir_pu, fn_template("restorable_land")))
-    ecoregions <- rast(file.path(dir_pu, fn_template("ecoregions")))
+    pu <- rast(file.path(dirs["dir_pu"], fn_template("restorable_land")))
+    ecoregions <- rast(file.path(dirs["dir_pu"], fn_template("ecoregions")))
 
-    ft_present <- list.files(dir_features,
+    ft_present <- list.files(dirs["dir_ft"],
                              pattern = "_mask.tif$",
                              full.names = TRUE)
     ft_names <- ft_present |>
@@ -459,7 +467,7 @@ if (pp_cells) {
     setcolorder(pu_vals, "id", before = 1)
 
     write_dataset(pu_vals,
-                  file.path(dir_proc, "global_cells"),
+                  file.path(dirs["dir_proc"], "global_cells"),
                   partitioning = c("ISONUM"))
 
 

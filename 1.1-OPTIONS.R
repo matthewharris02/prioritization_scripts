@@ -31,3 +31,17 @@ dir_features <- file.path(dir_out, "features")
 dir_pu <- file.path(dir_out, "planning_units")
 dir_proc <- file.path(dir_out, "processed")
 dir_inter <- file.path(dir_out, "intermediate_outputs")
+
+# Helper function to create named list of directory variables for multiple dir_ids
+create_info <- function(dir_out) {
+    tribble(
+        ~vars,           ~dirs,
+        "dir_out",        dir_out,
+        "dir_ft",   file.path(dir_out, "features"),
+        "dir_pu",         file.path(dir_out, "planning_units"),
+        "dir_proc",       file.path(dir_out, "processed"),
+        "dir_inter",      file.path(dir_out, "intermediate_outputs"),
+        "dir_analyze",    file.path(dir_out, "analysis"),
+    ) |>
+        deframe()
+}
