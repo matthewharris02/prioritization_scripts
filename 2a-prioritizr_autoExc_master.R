@@ -52,7 +52,7 @@ if (solver == "cbc") {
 
 ## 1.4 Directory-related variables ====
 dir_in <- file.path(dir_wd, "raw")
-dir_id <- "test"
+dir_id <- ""
 dir_out <- file.path(dir_wd, "work_in_progress",
                      paste0(RES, "km",
                          ifelse(dir_id == "", "", paste0("_", dir_id))
