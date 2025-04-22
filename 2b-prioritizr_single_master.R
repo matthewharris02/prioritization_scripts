@@ -1,6 +1,5 @@
 ##%##########################################################################%##
-#          Multi-budget spatial prioritisation (min_shortfall)                 #
-#                  with easy exclusion of features                             #
+#       Single budget spatial prioritisation (min_shorfall)                    #
 ##%##########################################################################%##
 #   REMINDERS:                                                                 #
 #       - CHECK the dir_wd                                                     #
