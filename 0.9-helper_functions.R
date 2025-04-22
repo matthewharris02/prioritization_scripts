@@ -42,7 +42,7 @@ prepare_ft_v_area <- function(ncp_name) {
         st_transform(st_crs(EPSG)) |>
         rasterize(rast_template, cover = TRUE)
     ncp_area <- ncp * (RES^2 * 1000^2) # manual area as we are using equal area
-    writeRaster(ncp_area, file.path(dir_features, fn_template(ncp_name)),
+    writeRaster(ncp_area, file.path(dirs["dir_ft"], fn_template(ncp_name)),
                 overwrite = TRUE)
 }
 
@@ -57,6 +57,6 @@ prepare_ft_v_raw <- function(ncp_name, field, fun) {
                   fun = fun
         )
 
-    writeRaster(ncp, file.path(dir_features, fn_template(ncp_name)),
+    writeRaster(ncp, file.path(dirs["dir_ft"], fn_template(ncp_name)),
                 overwrite = TRUE)
 }
