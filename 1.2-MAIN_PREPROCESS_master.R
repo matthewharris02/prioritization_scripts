@@ -255,18 +255,17 @@ converted <- (built + crops + plant) |>
 
 writeRaster(converted, file.path(dir_pu, fn_template("lulc_converted")), overwrite = TRUE)
 
-# TESTS
-# built_crop <- (built + crops) |>
-#     classify(data.frame(
-#         from    = c(0,  50),
-#         to      = c(50, Inf), # Inf to catch the weird >100
-#         becomes = c(1,  0)
-#     ),
-#     right = FALSE # so >= 50
-#     )
-#
-# writeRaster(built_crop, file.path(dir_pu, fn_template("lulc_converted_noPlant")), overwrite = TRUE)
-# END TEST
+# Required for building the exclusion reason layer
+built_crop <- (built + crops) |>
+    classify(data.frame(
+        from    = c(0,  50),
+        to      = c(50, Inf), # Inf to catch the weird >100
+        becomes = c(1,  0)
+    ),
+    right = FALSE # so >= 50
+    )
+
+writeRaster(built_crop, file.path(dir_pu, fn_template("lulc_converted_noPlant")), overwrite = TRUE)
 
 ## 1.4 Create restorable land planning units ====
 if (pp_restorable) {
