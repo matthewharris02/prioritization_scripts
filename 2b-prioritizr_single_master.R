@@ -82,7 +82,7 @@ rast_template <- rast(
 exclude_feature <- str_flatten(drop_feature, "|") # Create regex string to exclude vars
 if (is.null(drop_feature)) {exclude_feature <- "^$"} # Work-around for matching nothing so that if drop_features is empty, it selects them all
 
-variables <- read_csv(file.path(dir_in, "preprocess_info.csv")) |>
+variables <- read_csv(file.path(dirs["dir_in"], "preprocess_info.csv")) |>
     filter(grepl("ft_*", var)) |> # select only ft_ variables
     filter(!grepl(exclude_feature, var)) # exclude the variables in drop_feature
 

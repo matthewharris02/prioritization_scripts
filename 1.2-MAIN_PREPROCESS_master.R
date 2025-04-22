@@ -106,7 +106,7 @@ if (auto_dir) {
 
 ##%##########################################################################%##
 # 0.4 Load information ====
-variables <- read_csv(file.path(dir_in, "preprocess_info.csv"))
+variables <- read_csv(file.path(dirs["dir_out"], "preprocess_info.csv"))
 
 pu_fn <- variables |>
     select(var, fn_raw) |>
