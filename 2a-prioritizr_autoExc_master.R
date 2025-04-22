@@ -480,7 +480,7 @@ writeRaster(r,
             file.path(dirs["dir_output"],
                         glue::glue("solution_full_{solver}_{RES}km_{opt_gap}g_{opt_threads}t_",
                                    ifelse(runid == "", "default", runid),
-                                   ".csv")
+                                   ".tif")
                                    ),
             overwrite = TRUE)
 
