@@ -11,15 +11,35 @@ library(ggplot2)
 
 ## 0.2 Useful variables ====
 dir_wd <- "/mnt/sda/MH_restoration"
+dir_wd <- "C:/Users/matthewh/LOCAL/projects_local/restoration/"
 # dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2"
 dir_src <- dir_wd
 dir_in <- file.path(dir_wd, "raw")
+
+
 
 # Shared options
 source(file.path(dir_src, "script_tools/1.1-OPTIONS_20.R"))
 source(file.path(dir_src, "script_tools/3.0-helper_functions.R"))
 # Directory-related variables
+
+# HACKY: overwrite dir_* vars with dir_id to make it easier for different runs
+
+dir_id <- "20"
+# dir_id <- ""
+dir_out <- file.path(dir_wd, "work_in_progress", paste0(RES, "km", ifelse(dir_id == "", "", paste0("_", dir_id))))
+
+
+dir_features <- file.path(dir_out, "features")
+dir_pu <- file.path(dir_out, "planning_units")
+dir_proc <- file.path(dir_out, "processed")
+dir_inter <- file.path(dir_out, "intermediate_outputs")
+
+
 dir_analyze <- file.path(dir_out, "analysis", "compare")
+
+c(dir_analyze) |>
+    walk(\(x) if(!dir.exists(x)) { dir.create(x, recursive = TRUE)})
 
 # RUNID
 runid = ""
@@ -93,19 +113,29 @@ labeller_ft <- c(
 )
 
 
+# 20 budgets
+x_lim <- c(20, 1)
+x_breaks <- c(20, 15, 10, 5, 1)
+x_breaks_minor <- seq(20, 1, -2)
+
+# 10 budgets
+x_lim <- c(10, 1)
+x_breaks <- c(10, 5, 1)
+x_breaks_minor <- seq(10, 1, -2)
+
 p <- ggplot(cumul_es2, aes(x = rank)) +
     geom_point(aes(y = cumsum)) +
     # geom_col(aes(y = sum)) +
     facet_wrap(~ft, scales = 'free_y',
-               strip.position = "left",
+               # strip.position = "left",
                labeller = as_labeller(labeller_ft)) +
     scale_y_continuous(
         # sec.axis = sec_axis(sum/cumsum)
     ) +
     scale_x_reverse(
-        lim = c(20, 1),
-        breaks = c(20, 15, 10, 5, 1),
-        minor_breaks = seq(20, 1, -2)
+        lim = x_lim,
+        breaks = x_breaks,
+        minor_breaks = x_breaks_minor
     ) +
     labs(
         title = "Cumulative sum of ecosystem service values",
@@ -131,8 +161,17 @@ p <- ggplot(cumul_es2, aes(x = rank)) +
 p
 
 ggsave(
-    filename = file.path(dir_analyze, "plot_cumul_ft.png"),
-    plot = p
+    filename = file.path(dir_analyze,
+                         paste0(
+                             "plot_cumul_ft",
+                             ifelse(runid == "", "_default", paste0("_", runid)),
+                             ifelse(dir_id == "", "", paste0("_", dir_id)),
+                             ".png"
+                             )),
+    plot = p,
+    units = "cm",
+    width = 25,
+    height = 25
 )
 
 
