@@ -36,7 +36,7 @@ dir_out <- file.path(dir_wd, "work_in_progress",
 dir_in <- file.path(dir_wd, "raw")
 
 dirs <- create_info(dir_out)
-dirs["dir_split"] <- file.path(dir_proc, "split")
+dirs["dir_split"] <- file.path(dirs["dir_out"], "split")
 
 if (!dir.exists(dirs["dir_split"])) { dir.create(dirs["dir_split"]) }
 
