@@ -382,14 +382,19 @@ for (i in 1:length(budgets)) {
             add_min_shortfall_objective(budget = b_cells)
     } else { # Add locked-in constraints of previous solution
         # Format previous solution for locked-in constraint
-        prev <- solutions[[i - 1]]
-        prev_mod <- cbind(prev[, 1:2],
-                          sapply(prev[, 3],
-                                 FUN = \(x) if_else(x == 1, TRUE, FALSE)))
+        # prev <- solutions[[i - 1]]
+        b_prev <- budgets[i-1]
+        prev <- fread(file.path(dirs["dir_output"], 
+                                paste0(
+                                    glue("solution_single_{solver}_{RES}km_{opt_gap}g_{opt_threads}t_{b_prev}b_",
+                                            ifelse(runid == "", "default", runid),".csv"))),
+                      col.names = c("id", "cost", "solution"))
+        prev <- prev[,solution := fifelse(solution == 1, TRUE, FALSE)]              
+                      
         # Update problem
         p2 <- p |>
             add_min_shortfall_objective(budget = b_cells) |>
-            add_locked_in_constraints(prev_mod[[3]])
+            add_locked_in_constraints(prev[[3]])
     } # IF i
 
     # Select correct solver and set options
