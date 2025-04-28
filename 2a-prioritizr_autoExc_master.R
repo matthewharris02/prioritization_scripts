@@ -462,6 +462,9 @@ for (i in 1:length(budgets)) {
     close(file)
 
     print(glue::glue("Solving took {as.numeric((end - start), units = 'secs')} seconds long...!"))
+    print("Clearing RAM")
+    rm(p2, s, prev)
+    gc()
 } # FOR budget
 
 # 7. Output solutions ====
