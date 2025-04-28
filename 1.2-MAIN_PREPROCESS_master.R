@@ -213,15 +213,15 @@ if (pp_lulc) {
     }
 
     # Create binary 'other excluded land' (non-converted) raster
-    pwater <- rast(file.path(dirs["dir_inter"], fn_template("lulc_pwater")))
-    swater <- rast(file.path(dirs["dir_inter"], fn_template("lulc_swater")))
-    moss <-   rast(file.path(dirs["dir_inter"], fn_template("lulc_moss")))
+    # pwater <- rast(file.path(dirs["dir_inter"], fn_template("lulc_pwater")))
+    # swater <- rast(file.path(dirs["dir_inter"], fn_template("lulc_swater")))
+    # moss <-   rast(file.path(dirs["dir_inter"], fn_template("lulc_moss")))
     snow <-   rast(file.path(dirs["dir_inter"], fn_template("lulc_snow")))
-    bare <-   rast(file.path(dirs["dir_inter"], fn_template("lulc_bare")))
+    # bare <-   rast(file.path(dirs["dir_inter"], fn_template("lulc_bare")))
 
     # [Note to self: Faster through R than gdal_calc here]
     # Include/restorable = 1, exclude = 0
-    lulc_other <- (pwater + swater + moss + snow + bare) |>
+    lulc_other <- snow |>
         classify(data.frame(
             from    = c(0,  50),
             to      = c(50, Inf),
