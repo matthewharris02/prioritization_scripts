@@ -4,7 +4,7 @@
 # RESOLUTION ====
 # Set shared resolution for all layers
 # Relative to 1km at equator (or 30 arcseconds in non-equal area projection)
-RES <- 30
+RES <- 5
 
 # PROJECTION ====
 # Set EPSG to the EPSG code (e.g., EPSG:4326, ESRI:54009)
