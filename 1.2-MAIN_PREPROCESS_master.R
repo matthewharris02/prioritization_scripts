@@ -409,22 +409,22 @@ if (pp_ft_mask) {
     print("Processing features: masking ====")
     pu_mask <- rast(file.path(dirs["dir_pu"], fn_template("restorable_land")))
 
+    ft_in <- features |>
+        select(var) |>
+        lapply(fn_template) |>
+        lapply(\(x) file.path(dirs["dir_ft"], x))
 
-    ft_list <- list.files(dir_features,
-                          recursive = TRUE,
-                          full.names = TRUE,
-                          pattern = glue::glue("*_{RES}km_{PROJ}.tif$"))
+    ft_out <- features |>
+        select(var) |>
+        lapply(\(x) fn_template(x, extra = "_mask")) |>
+        lapply(\(x) file.path(dirs["dir_ft"], x))
 
-    file_names <- ft_list |>
-        basename() |>
-        str_remove_all(".tif")
-
-    ft_list |>
+    ft_in |>
         map(~rast(.x)) |>
         map(~mask(.x, pu_mask, maskvalue = c(0, NA))) |>
         walk2(
-            .y = file_names,
-            ~writeRaster(.x, file.path(dirs["dir_ft"], paste0(.y, "_mask", ".tif")), overwrite = TRUE)
+            .y = ft_out,
+            ~writeRaster(.x, .y, overwrite = TRUE)
         )
 
 }
