@@ -27,7 +27,7 @@ dir_src <- dir_wd
 write_each <- TRUE    # If TRUE, writes solution for each budget
 solver <- "cbc"        # Which solver: cbc, (lp)symphony
 opt_gap <- 0.01       # Choose gap for solver
-opt_threads <- 1      # Choose number of threads (ONLY for CBC solver)
+opt_threads <- 1      # Choose number of threads (ONLY for CBC or HIGHS solver)
 
 ### Solution-related options ====
 auto_dir <- TRUE      # Automatically create needed directories?
@@ -48,6 +48,8 @@ if (solver == "cbc") {
     library(rcbc)
 } else if (solver == "lp") {
     library(lpsymphony)
+} else if (solver == "highs") {
+    library(highs)
 }
 
 ## 1.4 Directory-related variables ====
@@ -402,6 +404,13 @@ for (i in 1:length(budgets)) {
         p2 <- p2 |>
             add_lpsymphony_solver(
                 gap = opt_gap,
+                verbose = TRUE
+            )
+    } else if (solver == "highs") {
+        p2 <- p2 |>
+            add_highs_solver(
+                gap = opt_gap,
+                threads = opt_threads,
                 verbose = TRUE
             )
     } # IF solver
