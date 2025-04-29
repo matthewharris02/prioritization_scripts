@@ -1,11 +1,6 @@
 ##%##########################################################################%##
 #           Set up options to be shared between scripts                        #
 ##%##########################################################################%##
-# RESOLUTION ====
-# Set shared resolution for all layers
-# Relative to 1km at equator (or 30 arcseconds in non-equal area projection)
-RES <- 5
-
 # PROJECTION ====
 # Set EPSG to the EPSG code (e.g., EPSG:4326, ESRI:54009)
 # Set PROJ to the text that you want to label the files with (e.g., moll, laea)

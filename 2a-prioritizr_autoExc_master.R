@@ -39,6 +39,15 @@ opt_ecoregions <- TRUE # Include ecoregions?
 #   !! To include all/exclude none leave empty `c()` or as `NULL`
 drop_feature <-  c()
 
+
+## RESOLUTION ====
+# Set shared resolution for all layers
+# Relative to 1km at equator (or 30 arcseconds in non-equal area projection)
+RES <- 5
+## Directory ID ====
+#   for different solutions at the same resolution
+dir_id <- ""
+
 ## 1.2 Shared options ====
 # Load options file to share options with pre-processing
 source(file.path(dir_src, "script_tools/1.1-OPTIONS.R"))

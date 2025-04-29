@@ -38,6 +38,13 @@ pp_ft_ras <- TRUE
 pp_ft_mask <- TRUE
 pp_cells <- TRUE
 
+## RESOLUTION ====
+# Set shared resolution for all layers
+# Relative to 1km at equator (or 30 arcseconds in non-equal area projection)
+RES <- 5
+## Directory ID ====
+#   for different solutions at the same resolution
+dir_id <- ""
 
 
 # automatically create needed sub directories

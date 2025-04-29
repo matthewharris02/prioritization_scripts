@@ -11,6 +11,15 @@ dir_src <- dir_wd
 # dir_wd <- "/home/matthewh@internal.wcmc/projects_active/p09217_RestorationPotentialLayer/global2024_v2"
 ## Set run-id ====
 runid <- ""
+
+## RESOLUTION ====
+# Set shared resolution for all layers
+# Relative to 1km at equator (or 30 arcseconds in non-equal area projection)
+RES <- 5
+## Directory ID ====
+#   for different solutions at the same resolution
+dir_id <- ""
+
 # 0.2 SET UP ====
 ## Load libraries
 library(arrow)
