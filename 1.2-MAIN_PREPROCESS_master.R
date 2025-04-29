@@ -2,18 +2,21 @@
 #       Script for pre-processing for spatial prioritization                   #
 ##%##########################################################################%##
 # REQUIRED packages:
-#       - sf, terra, tidyverse, arrow, data.table, tictoc, prioritzr, glue
+#       - sf, terra, tidyverse, arrow, data.table, prioritzr, glue
 ##%##########################################################################%##
 # REQUIRED BEFORE STARTING - set OPTIONS (external script):
 #   - Define the 'options' in the '1.1-OPTIONS.R' script
-#   - This is the parameters of the solution (e.g., resolution, extent,
+#   - This is the parameters of the solution (e.g. extent,
 #       projection) that are shared amongst 1.2, 1.3 and 2
 ##%##########################################################################%##
 # ENSURE CORRECT SETTINGS in section 0.1
-#   - Set the working directory in this script
-#   - This defines what parts of the script need to be ran
+#   - Set the working directory
+#   - Set the resolution
+#   - If wanted, change pp_* vars to select which parts of the script to run
 #   - Set a 'runid' in order to distinguish between multiple runs
 #       if it is the same RES
+#   - Set 'dir_id' to distinguish between different versions with same RES
+#       and/or different inputs
 #   - Set gdalwarp_path and gdalcalc_path
 ##%##########################################################################%##
 
