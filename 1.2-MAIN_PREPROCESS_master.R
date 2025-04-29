@@ -96,7 +96,6 @@ source(file.path(dir_src, "script_tools/0.9-helper_functions.R"))
 #     - raw                 | raw input data (i.e., downloaded data)
 #     - script_tools        | these scripts
 #     - work_in_progress    | output data (both from pre-processing, and final)
-dir_id <- ""
 dir_out <- file.path(dir_wd, "work_in_progress",
                      paste0(RES, "km",
                          ifelse(dir_id == "", "", paste0("_", dir_id))
