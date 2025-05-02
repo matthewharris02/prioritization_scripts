@@ -1,3 +1,8 @@
+# Pre-process the oil palm dataset
+# Relies on the boundaries_withOP.shp, which was created in QGIS by:
+#   - Clipping the UN Boundaries to the grid_withOP.shp
+#   - Joining the grid attributes to the UN Boundaries (to keep IDs)
+#   - Exporting shape file
 library(sf)
 library(glue)
 library(terra)
