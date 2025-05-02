@@ -23,7 +23,7 @@
 ##%##########################################################################%##
 # 0.1 MAKE CHANGES HERE ====
 ## Set working directory ====
-dir_wd <- "/mnt/sda/MH_restoration"
+dir_wd <- "/mnt/sda/restoration_opportunities"
 # dir_wd <- "/home/matthewh@internal.wcmc/projects_active/p09217_RestorationPotentialLayer/global2025"
 # dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2"
 dir_src <- dir_wd
