@@ -180,26 +180,17 @@ if (pp_countries) {
 if (pp_hfp) {
     print("* Processing Human Footprint *")
 
-    # Reclassify with gdal_calc.py
     ifile <- file.path(dir_in, pu_fn["hfp"])
-    ofile <- file.path(dirs["dir_inter"], fn_template("hfp_binary"))
-
-    # Include/restorable = 1, exclude = 0
-    system(glue(
-        gdalcalc_path,
-        ' -A "{ifile}"',
-        ' --calc="(A<={hfp_lower})*(A>{hfp_upper})*0+(A>{hfp_lower})*(A<={hfp_upper})*1"',
-        ' --co compress=lzw --overwrite --outfile "{ofile}"'
-    ))
-
-    # Reduce resolution with gdalwarp
-    ifile <- file.path(dirs["dir_inter"], fn_template("hfp_binary"))
-    ofile <- file.path(dirs["dir_pu"], fn_template("hfp_mask"))
+    ofile <- file.path(dirs["dir_inter"], fn_template("hfp_mask", ext = ".vrt"))
     system2(
         gdalwarp_path,
-        gdalwarp_args("mode", ifile, ofile, EPSG, RES, EXT),
+        gdalwarp_args("mode", ifile, ofile, EPSG, RES, EXT, compress = FALSE),
         wait = TRUE
     )
+
+    ifile <- ofile
+    ofile <- file.path(dirs["dir_pu"], fn_template("hfp_mask"))
+    system(glue("gdal_translate {ifile} {ofile} -co compress=lzw -co BIGTIFF=YES -co TILED=YES"))
 }
 
 ## 1.3 Land Use Exclusion ====
