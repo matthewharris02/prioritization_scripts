@@ -3,8 +3,9 @@
 #   - dir_wd
 #   - WDPA_version -- format MonthYYYY
 library(sf)
+library(glue)
 
-dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2"
+dir_wd <- "/mnt/sda/restoration_opportunities"
 dir_in <- file.path(dir_wd, "raw")
 
 WDPA_version <- "May2025"
