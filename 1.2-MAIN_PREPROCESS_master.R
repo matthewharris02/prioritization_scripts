@@ -194,86 +194,21 @@ if (pp_hfp) {
 }
 
 ## 1.3 Land Use Exclusion ====
-### 1.3.1 Land Use and Land Cover Processing
 if (pp_lulc) {
     print("* Processing LULC *")
-    fns_lulc <- variables |>
-        select(var, fn_raw) |>
-        filter(grepl("lulc", var)) |>
-        filter(var != "lulc_discrete") |>
-        deframe()
-
-    # Convert fractional cover to correct resolution
-    for (fn_lulc in names(fns_lulc)) {
-        ifile <- file.path(dir_in, pu_fn[fn_lulc])
-        ofile <- file.path(dirs["dir_inter"], fn_template(fn_lulc))
-        args <- gdalwarp_args("average", ifile, ofile, EPSG, RES, EXT, args = "-wm 2G -co GDAL_CACHEMAX=8000")
-        print(args)
-        system2(gdalwarp_path, args, wait = TRUE)
-    }
-
-    # Create binary 'other excluded land' (non-converted) raster
-    # pwater <- rast(file.path(dirs["dir_inter"], fn_template("lulc_pwater")))
-    # swater <- rast(file.path(dirs["dir_inter"], fn_template("lulc_swater")))
-    # moss <-   rast(file.path(dirs["dir_inter"], fn_template("lulc_moss")))
-    snow <-   rast(file.path(dirs["dir_inter"], fn_template("lulc_snow")))
-    # bare <-   rast(file.path(dirs["dir_inter"], fn_template("lulc_bare")))
-
-    # [Note to self: Faster through R than gdal_calc here]
-    # Include/restorable = 1, exclude = 0
-    lulc_other <- snow |>
-        classify(data.frame(
-            from    = c(0,  50),
-            to      = c(50, Inf),
-            becomes = c(1,  0)
-        ),
-        right = FALSE # so >= 50
-        )
-    writeRaster(lulc_other, file.path(dirs["dir_pu"], fn_template("lulc_other")), overwrite = TRUE)
-
+    # Converted land: cropland + built-up + planted forests
+    #   Pre-processed via Google Earth Engine and exported
+    #   GEE tiles converted to VRT and GTiff in script 0.5
+    ifile <- file.path(dir_in, pu_fn["lulc_converted"])
+    ofile <- file.path(dirs["dir_inter"], fn_template("lulc_converted"))
+    system2(
+        gdalwarp_path,
+        gdalwarp_args("average", ifile, ofile, EPSG, RES, EXT),
+        wait = TRUE
+    )
+    converted_frac <- rast(ofile) / 1e8
+    writeRaster(converted_frac, file.path(dirs["dir_pu"], fn_template("lulc_converted")))
 }
-
-### 1.3.2 Planted trees from Xiao (2024) and Xiao et al. (2024)
-# NOTE: loads planted trees already exported through GEE at 1km mean
-# This ensures that it is the same extent and resolution as all the rest
-# It had to be exported at 1km due to processing limitations
-#   Need to multiply by 100 as this is 0-1 but copernicus is 0-100
-plant <- (rast(file.path(dir_in, pu_fn["plant_forests"])) * 100) |>
-    classify(cbind(NA, 0)) |>
-    project(rast_template, method = "average") |>
-    writeRaster(file.path(dirs["dir_pu"], fn_template("plant_forests")), overwrite = TRUE)
-
-
-### 1.3.4 Converted land raster
-# Converted = built + crop + plantations
-built <- rast(file.path(dirs["dir_inter"], fn_template("lulc_built")))
-crops <- rast(file.path(dirs["dir_inter"], fn_template("lulc_crop")))
-plant <- rast(file.path(dirs["dir_pu"], fn_template("plant_forests")))
-
-# [Note to self: Faster through R than gdal_calc here]
-# Include/restorable = 1, exclude = 0
-converted <- (built + crops + plant) |>
-    classify(data.frame(
-        from    = c(0,  50),
-        to      = c(50, Inf), # Inf to catch the weird >100
-        becomes = c(1,  0)
-    ),
-    right = FALSE # so >= 50
-    )
-
-writeRaster(converted, file.path(dirs["dir_pu"], fn_template("lulc_converted")), overwrite = TRUE)
-
-# Required for building the exclusion reason layer
-built_crop <- (built + crops) |>
-    classify(data.frame(
-        from    = c(0,  50),
-        to      = c(50, Inf), # Inf to catch the weird >100
-        becomes = c(1,  0)
-    ),
-    right = FALSE # so >= 50
-    )
-
-writeRaster(built_crop, file.path(dirs["dir_pu"], fn_template("lulc_converted_noPlant")), overwrite = TRUE)
 
 ## 1.4 Create restorable land planning units ====
 if (pp_restorable) {
