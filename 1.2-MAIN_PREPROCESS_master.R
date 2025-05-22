@@ -49,7 +49,6 @@ RES <- 5
 #   for different solutions at the same resolution
 dir_id <- ""
 
-
 # automatically create needed sub directories
 auto_dir <- TRUE
 
@@ -126,13 +125,11 @@ features <- variables |>
     filter(grepl("ft", var)) |>
     filter(!is.na(fn_raw))
 
-
 ## Helper functions ====
 # Helper function to make sure all output files named consistently
 fn_template <- function(name, extra = "", ext = ".tif") {
     return(paste0(name, "_", RES, "km_", PROJ, extra, ext))
 }
-
 
 ## Template raster
 rast_template <- rast(
@@ -217,10 +214,10 @@ if (pp_restorable) {
     lulc_converted <- rast(file.path(dirs["dir_pu"], fn_template("lulc_converted")))
     hfp_intermediate <- rast(file.path(dirs["dir_pu"], fn_template("hfp_mask")))
     # Include/restorable = 1, exclude = NA
-    restorable <- hfp_intermediate |> 
-        mask(lulc_other, maskvalue = c(0), updatevalue = NA) |> 
-        mask(lulc_converted, maskvalue = c(0), updatevalue = NA) |> 
-        classify(cbind(0, NA)) |> 
+    restorable <- hfp_intermediate |>
+        mask(lulc_other, maskvalue = c(0), updatevalue = NA) |>
+        mask(lulc_converted, maskvalue = c(0), updatevalue = NA) |>
+        classify(cbind(0, NA)) |>
         writeRaster(file.path(dirs["dir_pu"], fn_template("restorable_land")), overwrite = TRUE)
 
     # TODO: Make output name include the HFP bounds for easy identification
@@ -256,7 +253,6 @@ if (pp_ecoregions) {
         as_tibble() %>%
         select(-layer) %>%
         rename(realised_extent = count)
-
 
     ### 1.5.2 Calculate remnant ecoregion proportions ====
     remnant_table <- remnant_pixels |>
@@ -306,8 +302,6 @@ if (pp_ft_vec) {
                     overwrite = TRUE)
     # Prepare vector features that want attribute values
     prepare_ft_v_raw("ft_coastal", "coastal_deficit_cur", "mean")
-
-
 }
 ### 1.6.2 Raster processing ====
 if (pp_ft_ras) {
@@ -318,13 +312,11 @@ if (pp_ft_ras) {
         select(var, fn_raw) |>
         deframe()
 
-
     ft_method <- features |>
         filter(type == "ras") |>
         select(var, method) |>
         # mutate(method = "average") |> # manually set method to 'average' for all to fix errors
         deframe()
-
 
     for (ft in names(ft_fn_r)) {
         print(paste0("Processing: ", ft, " ..."))
@@ -332,10 +324,7 @@ if (pp_ft_ras) {
         ofile <- file.path(dirs["dir_ft"], fn_template(ft))
         method <- ft_method[ft]
         prepare_ft_r_gdal(ifile, ofile, method, gdalwarp_path)
-
     }
-
-
 }
 ### 1.6.3 Mask features to PU ====
 # Mask with planning units so only necessary ones kept
@@ -361,9 +350,7 @@ if (pp_ft_mask) {
             .y = ft_out,
             ~writeRaster(.x, .y, overwrite = TRUE)
         )
-
 }
-
 
 # 1.7 Pre-processing Part II ====
 
@@ -374,7 +361,7 @@ if (pp_cells) {
     ft_names <- features |>
         select(var) |>
         deframe()
-    
+
     ft_fns <- ft_names |>
         sapply(\(x) fn_template(x, extra = "_mask")) |>
         sapply(\(x) file.path(dirs["dir_ft"], x))
@@ -385,11 +372,11 @@ if (pp_cells) {
     other_fns <- other_names |>
         sapply(fn_template) |>
         sapply(\(x) file.path(dirs["dir_pu"], x))
-    
+
     # Create combined lists for names and file paths
     all_names <- c(other_names, ft_names)
     all_fns <- c(other_fns, ft_fns)
- 
+
     # Helper function to extract large raster with MakeTiles
     large_extract <- function(rast, name, ntiles = 64) {
         pritn(glue("Initializing large_extract() for {name} with {ntiles} tiles"))
@@ -399,7 +386,7 @@ if (pp_cells) {
         if (!dir.exists(dirname(temp_fn))) dir.create(dirname(temp_fn), recursive = TRUE)
         if (!dir.exists(vals_dir)) dir.create(vals_dir, recursive = TRUE)
         # Delete old files if exist
-        if( dir.exists(dirname(temp_fn))) {
+        if (dir.exists(dirname(temp_fn))) {
             existing <- list.files(dirname(temp_fn), full.names = TRUE)
             lapply(existing, file.remove)
         }
@@ -438,7 +425,7 @@ if (pp_cells) {
     all_rast <- all_fns |>
         sapply(rast) |>
         rast()
-    
+
     # Set correct names for ISONUM and pu
     all_names[1] <- "ISONUM"
     all_names[4] <- "pu"
@@ -446,11 +433,11 @@ if (pp_cells) {
 
     # Extract values
     pu_vals <- large_extract(all_rast, "all")
-    
+
     pu_vals <- pu_vals[!is.na(ISONUM),  # Ensure within UN boundary 
                         ][!is.na(pu),   # Filter our non 'restorable land'
                         ][, id := 1:.N] # Give unique id to each pu
-    
+
     setcolorder(pu_vals, "id", before = 1)
 
     write_dataset(pu_vals,
