@@ -210,7 +210,7 @@ if (pp_lulc) {
                 to   = c(0.5, 1),
                 becomes = c(1, 0)
             ),
-            right = FALSE # so >= 50
+            right = FALSE # so >= 0.5
         )
     writeRaster(converted_frac, file.path(dirs["dir_pu"], fn_template("lulc_converted")), overwrite = TRUE)
 }
