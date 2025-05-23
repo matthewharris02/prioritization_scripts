@@ -25,7 +25,7 @@ dir_wd <- "/mnt/sda/MH_restoration"
 dir_src <- dir_wd
 ### Prioritzr-related options ====
 write_each <- TRUE    # If TRUE, writes solution for each budget
-solver <- "cbc"        # Which solver: cbc, (lp)symphony
+solver <- "highs"        # Which solver: cbc, (lp)symphony
 opt_gap <- 0.01       # Choose gap for solver
 opt_threads <- 1      # Choose number of threads (ONLY for CBC or HIGHS solver)
 
