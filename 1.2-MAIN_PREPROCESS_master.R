@@ -385,7 +385,7 @@ if (pp_cells) {
 
     # Helper function to extract large raster with MakeTiles
     large_extract <- function(rast, name, ntiles = 64) {
-        pritn(glue("Initializing large_extract() for {name} with {ntiles} tiles"))
+        print(glue("Initializing large_extract() for {name} with {ntiles} tiles"))
         # Set up directories
         vals_dir <- file.path(dirs["dir_inter"], "temp_vals", name)
         temp_fn <- file.path(dirs["dir_inter"], "temp_tiles", name, glue("temp_{name}_.tif"))
