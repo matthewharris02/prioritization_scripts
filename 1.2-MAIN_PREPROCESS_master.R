@@ -210,12 +210,10 @@ if (pp_lulc) {
 ## 1.4 Create restorable land planning units ====
 if (pp_restorable) {
     print("* Processing Restorable Land *")
-    lulc_other <- rast(file.path(dirs["dir_pu"], fn_template("lulc_other")))
     lulc_converted <- rast(file.path(dirs["dir_pu"], fn_template("lulc_converted")))
     hfp_intermediate <- rast(file.path(dirs["dir_pu"], fn_template("hfp_mask")))
     # Include/restorable = 1, exclude = NA
     restorable <- hfp_intermediate |>
-        mask(lulc_other, maskvalue = c(0), updatevalue = NA) |>
         mask(lulc_converted, maskvalue = c(0), updatevalue = NA) |>
         classify(cbind(0, NA)) |>
         writeRaster(file.path(dirs["dir_pu"], fn_template("restorable_land")), overwrite = TRUE)
@@ -367,7 +365,7 @@ if (pp_cells) {
         sapply(\(x) file.path(dirs["dir_ft"], x))
 
     # Prepare names and file paths for other variables
-    other_names <- c("countries", "lulc_converted", "lulc_other", "restorable_land", "ecoregions") 
+    other_names <- c("countries", "lulc_converted", "restorable_land", "ecoregions")
 
     other_fns <- other_names |>
         sapply(fn_template) |>
