@@ -203,8 +203,16 @@ if (pp_lulc) {
         gdalwarp_args("average", ifile, ofile, EPSG, RES, EXT),
         wait = TRUE
     )
-    converted_frac <- rast(ofile) / 1e8
-    writeRaster(converted_frac, file.path(dirs["dir_pu"], fn_template("lulc_converted")))
+    converted_frac <- (rast(ofile) / 10e8) |>
+        classify(
+            data.frame(
+                from = c(0,   0.5),
+                to   = c(0.5, 1),
+                becomes = c(0, 1)
+            ),
+            right = FALSE # so >= 50
+        )
+    writeRaster(converted_frac, file.path(dirs["dir_pu"], fn_template("lulc_converted")), overwrite = TRUE)
 }
 
 ## 1.4 Create restorable land planning units ====
