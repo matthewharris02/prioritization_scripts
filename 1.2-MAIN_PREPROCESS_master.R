@@ -432,7 +432,8 @@ if (pp_cells) {
     names(all_rast) <- all_names
 
     # Extract values
-    pu_vals <- large_extract(all_rast, "all")
+    large_extract(all_rast, "all")
+    pu_vals <- read_parquet(file.path(dirs["dir_proc"], glue("all.parquet")))
 
     pu_vals <- pu_vals[!is.na(ISONUM),  # Ensure within UN boundary 
                         ][!is.na(pu),   # Filter our non 'restorable land'
