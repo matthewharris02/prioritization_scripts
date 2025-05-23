@@ -208,7 +208,7 @@ if (pp_lulc) {
             data.frame(
                 from = c(0,   0.5),
                 to   = c(0.5, 1),
-                becomes = c(0, 1)
+                becomes = c(1, 0)
             ),
             right = FALSE # so >= 50
         )
