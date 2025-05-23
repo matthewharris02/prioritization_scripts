@@ -428,7 +428,7 @@ if (pp_cells) {
 
     # Set correct names for ISONUM and pu
     all_names[1] <- "ISONUM"
-    all_names[4] <- "pu"
+    all_names[3] <- "pu"
     names(all_rast) <- all_names
 
     # Extract values
