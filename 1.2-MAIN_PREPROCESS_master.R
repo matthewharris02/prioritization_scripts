@@ -383,54 +383,6 @@ if (pp_cells) {
     all_names <- c(other_names, ft_names)
     all_fns <- c(other_fns, ft_fns)
 
-    # Helper function to extract large raster with MakeTiles
-    large_extract <- function(rast, name, ntiles = 64) {
-        print(glue("Initializing large_extract() for {name} with {ntiles} tiles"))
-        # Set up directories
-        vals_dir <- file.path(dirs["dir_inter"], "temp_vals", name)
-        temp_fn <- file.path(dirs["dir_inter"], "temp_tiles", name, glue("temp_{name}_.tif"))
-        if (!dir.exists(dirname(temp_fn))) dir.create(dirname(temp_fn), recursive = TRUE)
-        if (!dir.exists(vals_dir)) dir.create(vals_dir, recursive = TRUE)
-        # Delete old files if exist
-        if (dir.exists(dirname(temp_fn))) {
-            existing <- list.files(dirname(temp_fn), full.names = TRUE)
-            lapply(existing, file.remove)
-        }
-
-        # Ensure ntiles is square number by taking the closest, lower square number
-        ntiles <- floor(ntiles ^ (1/2))^2
-
-        # Create template for MakeTiles
-        rast_tiles <- rast(
-            crs = crs(EPSG),
-            nrows = ntiles^(1/2),
-            ncols = ntiles^(1/2),
-            ext = ext(EXT)
-        )
-
-        print(glue("Making {ntiles} tiles for {name}..."))
-        tiles <- rast |>
-            makeTiles(rast_tiles, filename = temp_fn, overwrite = TRUE)
-        print("Tiles made")
-        for (i in seq(1, ntiles)) {
-            print(glue("Extracting for tile #{i}..."))
-            tile <- rast(tiles[i]) |>
-                as.data.frame(xy = TRUE, na.rm = NA) |>
-                setDT()
-            tile <- tile[!is.na(ISONUM),  # Ensure within UN boundary 
-                        ][!is.na(pu),   # Filter out non 'restorable land'
-                        ][, id := 1:.N] # Give unique id to each pu
-            write_parquet(tile, file.path(vals_dir, glue("vals_{name}_{i}.parquet")))
-            rm(tile)
-        }
-        print("All tiles extracted; now loading values")
-        # Loading vals
-        vals_fns <- lapply(1:ntiles, \(x) file.path(vals_dir, glue("vals_{name}_{x}.parquet")))
-        vals <- rbindlist(lapply(vals_fns, read_parquet)) |>
-            write_parquet(file.path(dirs["dir_proc"], glue("{name}.parquet")))
-        print("Extraction complete!")
-    }
-
     # Create multi-band raster for all variables
     all_rast <- all_fns |>
         sapply(rast) |>
@@ -441,8 +393,53 @@ if (pp_cells) {
     all_names[3] <- "pu"
     names(all_rast) <- all_names
 
-    # Extract values
-    large_extract(all_rast, "all")
+    # Extract values in tiles as too large to extract all
+    if (RES >= 5) ntiles <- 16
+    if (RES < 5) ntiles <- 64
+    print(glue("Initializing large_extract() with {ntiles} tiles"))
+    # Set up directories
+    vals_dir <- file.path(dirs["dir_inter"], "temp_vals")
+    temp_fn <- file.path(dirs["dir_inter"], "temp_tiles", glue("temp_.tif"))
+    if (!dir.exists(dirname(temp_fn))) dir.create(dirname(temp_fn), recursive = TRUE)
+    if (!dir.exists(vals_dir)) dir.create(vals_dir, recursive = TRUE)
+    # Delete old files if exist
+    if (dir.exists(dirname(temp_fn))) {
+        existing <- list.files(dirname(temp_fn), full.names = TRUE)
+        lapply(existing, file.remove)
+    }
+    # Create template for MakeTiles
+    rast_tiles <- rast(
+        crs = crs(EPSG),
+        nrows = ntiles^(1/2),
+        ncols = ntiles^(1/2),
+        ext = ext(EXT)
+    )
+
+    print(glue("Making {ntiles} tiles..."))
+    tiles <- all_rast |>
+        makeTiles(rast_tiles, filename = temp_fn, overwrite = TRUE)
+    print("Tiles made")
+    for (i in seq(1, ntiles)) {
+        print(glue("Extracting for tile #{i}..."))
+        tile <- rast(tiles[i]) |>
+            as.data.frame(xy = TRUE, na.rm = NA) |>
+            setDT()
+        print(glue("Tile #{i} extracted -- filtering"))
+        tile <- tile[!is.na(ISONUM),  # Ensure within UN boundary 
+                    ][!is.na(pu),   # Filter out non 'restorable land'
+                    ][, id := 1:.N] # Give unique id to each pu
+        write_parquet(tile, file.path(vals_dir, glue("vals_{i}.parquet")))
+        print(glue("Vals for tile #{i} written"))
+        rm(tile)
+    }
+    print("All tiles extracted; now loading values")
+    # Loading vals
+    vals_fns <- lapply(1:ntiles, \(x) file.path(vals_dir, glue("vals_{x}.parquet")))
+    vals <- rbindlist(lapply(vals_fns, read_parquet)) |>
+        write_parquet(file.path(dirs["dir_proc"], glue("vals.parquet")))
+    print("Extraction complete!")
+    rm(vals)
+
     pu_vals <- read_parquet(file.path(dirs["dir_proc"], glue("all.parquet")))
 
     # Probably unnecessary as this is in the fuction above
