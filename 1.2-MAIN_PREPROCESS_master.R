@@ -416,7 +416,11 @@ if (pp_cells) {
             print(glue("Extracting for tile #{i}..."))
             tile <- rast(tiles[i]) |>
                 as.data.frame(xy = TRUE, na.rm = NA) |>
-                write_parquet(file.path(vals_dir, glue("vals_{name}_{i}.parquet")))
+                setDT()
+            tile <- tile[!is.na(ISONUM),  # Ensure within UN boundary 
+                        ][!is.na(pu),   # Filter out non 'restorable land'
+                        ][, id := 1:.N] # Give unique id to each pu
+            write_parquet(tile, file.path(vals_dir, glue("vals_{name}_{i}.parquet")))
             rm(tile)
         }
         print("All tiles extracted; now loading values")
@@ -441,6 +445,7 @@ if (pp_cells) {
     large_extract(all_rast, "all")
     pu_vals <- read_parquet(file.path(dirs["dir_proc"], glue("all.parquet")))
 
+    # Probably unnecessary as this is in the fuction above
     pu_vals <- pu_vals[!is.na(ISONUM),  # Ensure within UN boundary 
                         ][!is.na(pu),   # Filter our non 'restorable land'
                         ][, id := 1:.N] # Give unique id to each pu
