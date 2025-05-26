@@ -426,8 +426,7 @@ if (pp_cells) {
             setDT()
         print(glue("Tile #{i} extracted -- filtering"))
         tile <- tile[!is.na(ISONUM),  # Ensure within UN boundary 
-                    ][!is.na(pu),   # Filter out non 'restorable land'
-                    ][, id := 1:.N] # Give unique id to each pu
+                    ][!is.na(pu)]   # Filter out non 'restorable land'
         write_parquet(tile, file.path(vals_dir, glue("vals_{i}.parquet")))
         print(glue("Vals for tile #{i} written"))
         rm(tile)
