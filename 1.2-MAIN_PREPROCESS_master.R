@@ -158,6 +158,11 @@ if (pp_countries) {
         ) |>
         write_csv(file.path(dirs["dir_pu"], "global_countries_key.csv"))
 
+    lakes <- st_read(file.path(dir_in, pu_fn["lakes"])) |>
+        st_transform(st_crs(EPSG)) |>
+        rasterize(rast_template, field = 1) |>
+        writeRaster(file.path(dirs["dir_inter"], fn_template("lakes_mask")),
+                    overwrite = TRUE)
     # Rasterize countries vector with cell value ISO number
     countries_rast <- countries |>
         st_transform(st_crs(EPSG)) |>
@@ -169,6 +174,7 @@ if (pp_countries) {
     # Land mask for countries
     countries_mask <- countries_rast |>
         classify(cbind(-Inf, Inf, TRUE)) |>
+        mask(rast(file.path(dirs["dir_inter"], fn_template("lakes_mask"))), maskvalues = c(1), updatevalue=NA) |>
         writeRaster(file.path(dirs["dir_pu"], fn_template("countries_mask")),
                     overwrite = TRUE)
 }
