@@ -20,7 +20,7 @@ library(glue)
 
 # 1. OPTIONS and set-up ====
 ## 1.1 EDITABLE options ====
-dir_wd <- "/mnt/sda/MH_restoration"
+dir_wd <- "/mnt/sda/restoration_opportunities"
 # dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2"
 dir_src <- dir_wd
 ### Prioritzr-related options ====
@@ -168,6 +168,10 @@ if (!split) {
 
 }
 
+# Extract relevant subsets
+# Allows to remove grid_cell later to save RAM
+costs <- select(grid_cell, c("id", "cost"))
+coords <- select(grid_cell, c("id", "x", "y"))
 
 # 3. FEATURE LIST ====
 ## 3.1 Split feature ids ====
@@ -286,6 +290,9 @@ if (split) {
     }
 }
 
+# Remove now unnecessary objects
+rm(ft_split, rij_ecoregions, rij_global, grid_cell)
+gc()
 
 # 5. Targets ====
 ## 5.1  Ecoregion targets ====
@@ -319,11 +326,8 @@ targets <- targets |>
     as.matrix()
 
 # 6. Problem and solution ====
-## 6.1 Costs ====
-costs <- grid_cell |>
-    select(id, cost)
 features <- rename(feat_master, "id" = species)
-## 6.2 Base problem ====
+## 6.1 Base problem ====
 # Create base problem
 print("Creating base problem...")
 p <- problem(
@@ -333,6 +337,7 @@ p <- problem(
     rij = rij
 ) |>
     add_relative_targets(targets)
+gc()
 
 budgets <- seq(0.05, 1, 0.05)
 solutions <- list() # Solutions for each budget
@@ -487,7 +492,7 @@ combined_solution <- joined_solution[, `:=` (final = rowSums(.SD)),
                                .SDcols = !c("id")
                                ][, .(id, final)]
 combined_solution <- combined_solution |>
-    left_join(select(grid_cell, c("id", "x", "y")), by = "id") |>
+    left_join(coords, by = "id") |>
     write_csv(file.path(dirs["dir_output"],
                         glue::glue("solution_full_{solver}_{RES}km_{opt_gap}g_{opt_threads}t_",
                                    ifelse(runid == "", "default", runid),
