@@ -431,6 +431,7 @@ if (pp_cells) {
         print(glue("Vals for tile #{i} written"))
         rm(tile)
     }
+    gc()
     print("All tiles extracted; now loading values")
     # Loading vals
     vals_fns <- lapply(1:ntiles, \(x) file.path(vals_dir, glue("vals_{x}.parquet")))
