@@ -3,7 +3,7 @@
 #           V 30.08.2024    Matthew Harris and Vignesh Kamath                  #
 ##%##########################################################################%##
 # Helper function for producing gdalwarp argument values
-gdalwarp_args <- function(method, ifile, ofile, EPSG, RES, EXT, args = "") {
+gdalwarp_args <- function(method, ifile, ofile, EPSG, RES, EXT, ftype = "GTIFF", compress = TRUE, args = "") {
     # Arguments:
     #   Method: 'near', 'bilinear', 'cubic' ... from gdalwarp
     #   ifile: full path to and filename of the input file
@@ -13,11 +13,12 @@ gdalwarp_args <- function(method, ifile, ofile, EPSG, RES, EXT, args = "") {
     #   EXT: desired output extent
     #   args: additional arguments to be passed to GDAL; must be fully-formatted
 
-    glue::glue('-overwrite -t_srs {EPSG} -r {method} ',
-               '-tr {1000*RES} {1000*RES} ',
-               '-te {EXT[1]} {EXT[3]} {EXT[2]} {EXT[4]} ',
-               '-of GTiff -co compress=lzw {args} ',
-               '"{ifile}" "{ofile}"')
+    glue::glue("-overwrite -t_srs {EPSG} -r {method} ",
+               "-tr {1000*RES} {1000*RES} ",
+               "-te {EXT[1]} {EXT[3]} {EXT[2]} {EXT[4]} ",
+               "-of {ftype} {args} ",
+               ifelse(compress, "-co compress=lzw  ", ""),
+               "'{ifile}' '{ofile}'")
 }
 
 # Prepare raster NCPs using GDAL to make it quick
@@ -42,7 +43,7 @@ prepare_ft_v_area <- function(ncp_name) {
         st_transform(st_crs(EPSG)) |>
         rasterize(rast_template, cover = TRUE)
     ncp_area <- ncp * (RES^2 * 1000^2) # manual area as we are using equal area
-    writeRaster(ncp_area, file.path(dir_features, fn_template(ncp_name)),
+    writeRaster(ncp_area, file.path(dirs["dir_ft"], fn_template(ncp_name)),
                 overwrite = TRUE)
 }
 
@@ -57,6 +58,6 @@ prepare_ft_v_raw <- function(ncp_name, field, fun) {
                   fun = fun
         )
 
-    writeRaster(ncp, file.path(dir_features, fn_template(ncp_name)),
+    writeRaster(ncp, file.path(dirs["dir_ft"], fn_template(ncp_name)),
                 overwrite = TRUE)
 }

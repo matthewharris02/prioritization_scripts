@@ -20,4 +20,5 @@ while read -r line; do
     mkdir -p $dirOut
 
     gdal_calc.py -A "${dirIn}/${oldName}" --calc="(A<3)*1+(A==3)*-128" --NoDataValue=-128 --outfile="${dirOut}/${newName}" --co compress=lzw --overwrite
+    
 done <"${dirBase}/files.txt"

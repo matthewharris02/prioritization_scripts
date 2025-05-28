@@ -5,12 +5,21 @@
 ##%##########################################################################%##
 # 0.1 MAKE CHANGES HERE ====
 ## Set working directory ====
-dir_wd <- "/mnt/sda/MH_restoration"
+dir_wd <- "/mnt/sda/restoration_opportunities"
 # dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2"
 dir_src <- dir_wd
 # dir_wd <- "/home/matthewh@internal.wcmc/projects_active/p09217_RestorationPotentialLayer/global2024_v2"
 ## Set run-id ====
 runid <- ""
+
+## RESOLUTION ====
+# Set shared resolution for all layers
+# Relative to 1km at equator (or 30 arcseconds in non-equal area projection)
+RES <- 5
+## Directory ID ====
+#   for different solutions at the same resolution
+dir_id <- ""
+
 # 0.2 SET UP ====
 ## Load libraries
 library(arrow)
@@ -27,15 +36,23 @@ source(file.path(dir_src, "script_tools/1.1-OPTIONS.R"))
 ## Directory-related variables
 
 dir_in <- file.path(dir_wd, "raw")
+dir_id <- ""
+dir_out <- file.path(dir_wd, "work_in_progress",
+                     paste0(RES, "km",
+                         ifelse(dir_id == "", "", paste0("_", dir_id))
+                     ))
 
-dir_split <- file.path(dir_proc, "split")
+dir_in <- file.path(dir_wd, "raw")
 
-if (!dir.exists(dir_split)) { dir.create(dir_split) }
+dirs <- create_info(dir_out)
+dirs["dir_split"] <- file.path(dirs["dir_proc"], "split")
+
+if (!dir.exists(dirs["dir_split"])) { dir.create(dirs["dir_split"]) }
 
 # 0.4 Load Information ====
 start <- Sys.time()
 # Read in data on variables to automatically select national vs global features
-variables <- read_csv(file.path(dir_in, "preprocess_info.csv"))
+variables <- read_csv(file.path(dirs["dir_out"], "preprocess_info.csv"))
 ft_split <- variables |>
     filter(split == "national") |>
     filter(grepl("ft*", var)) |>
@@ -44,7 +61,7 @@ ft_split <- variables |>
 
 # 1.1 Load global cells ====
 # Open the planning unit dataset but *don't* load all data yet
-pu_vals <- open_dataset(file.path(dir_proc, "global_cells"),
+pu_vals <- open_dataset(file.path(dirs["dir_proc"], "global_cells"),
                         partitioning = c("ISONUM"))
 
 # Initialize variables
@@ -87,11 +104,11 @@ for (ft in ft_split) {
     last_column_id <- max(mapping_ft_id$column_id, na.rm = TRUE)
 
     # Write mappping id to file for info
-    write.csv(mapping_ft_id, file.path(dir_split, paste0("mapping_", ft, ".csv")),
+    write.csv(mapping_ft_id, file.path(dirs["dir_split"], paste0("mapping_", ft, ".csv")),
               row.names = FALSE)
 
     # Write feature rij matrix to file
-    write_parquet(pu_vals_ft_2, file.path(dir_split, paste0(ft, ".parquet")))
+    write_parquet(pu_vals_ft_2, file.path(dirs["dir_split"], paste0(ft, ".parquet")))
 }
 end <- Sys.time()
 print("Finished!")

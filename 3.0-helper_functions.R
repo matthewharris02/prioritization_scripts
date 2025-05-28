@@ -1,15 +1,15 @@
-dir_output <- \(x) file.path(dir_out, "output", ifelse(x == "", "default", x))
+dir_output <- function(dir_out, runid) file.path(dir_out, "output", ifelse(runid == "", "default", runid))
 
-# Helper to load solution, WITHOUT runid in filename
-load_sol1 <- function(runid, type = "tif") {
-    fn <- file.path(dir_output(runid), glue::glue("solution_full_lp_20km_0.01g_1t_1b.{type}"))
+# Helper to load solution, WITH runid in filename
+load_sol2 <- function(runid, dir_out, type = "tif") {
+    fn <- file.path(dir_output(dir_out, runid), glue::glue("solution_full_lp_{RES}km_0.01g_1t_{runid}.{type}"))
     if (type == "tif") rast(fn)
     if (type == "csv") read_csv(fn)
 }
 
-# Helper to load solution, WITH runid in filename
-load_sol2 <- function(runid, type = "tif") {
-    fn <- file.path(dir_output(runid), glue::glue("solution_full_lp_20km_0.01g_1t_1b_{runid}.{type}"))
+# Load a partial (i.e., individual budget) solution
+load_sol_partial <- function(runid, dir_out, info_str, type = "csv") {
+    fn <- file.path(dir_output(dir_out, runid), glue::glue("solution_single_", info_str, ".{type}"))
     if (type == "tif") rast(fn)
     if (type == "csv") read_csv(fn)
 }

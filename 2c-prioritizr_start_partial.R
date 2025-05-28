@@ -1,11 +1,13 @@
 ##%##########################################################################%##
 #          Multi-budget spatial prioritisation (min_shortfall)                 #
 #                  with easy exclusion of features                             #
+#         starting at some specified budget using previous output              #
 ##%##########################################################################%##
 #   REMINDERS:                                                                 #
 #       - CHECK the dir_wd                                                     #
 #       - check the file name for shared options (`1.1-OPTIONS.R`)             #
 #       - Check the solution-related options (e.g., runid)                     #
+# **NOTE**: currently slightly older than 2a                                   #
 ##%##########################################################################%##
 
 # 0. Load libraries ====
@@ -20,33 +22,24 @@ library(glue)
 
 # 1. OPTIONS and set-up ====
 ## 1.1 EDITABLE options ====
-dir_wd <- "/mnt/sda/restoration_opportunities"
+dir_wd <- "/mnt/sda/MH_restoration"
 # dir_wd <- "O:/f01_projects_active/Global/p09217_RestorationPotentialLayer/global2024_v2"
 dir_src <- dir_wd
 ### Prioritzr-related options ====
 write_each <- TRUE    # If TRUE, writes solution for each budget
-solver <- "highs"        # Which solver: cbc, (lp)symphony
+solver <- "cbc"        # Which solver: cbc, (lp)symphony
 opt_gap <- 0.01       # Choose gap for solver
-opt_threads <- 1      # Choose number of threads (ONLY for CBC or HIGHS solver)
+opt_threads <- 1      # Choose number of threads (ONLY for CBC solver)
 
 ### Solution-related options ====
 auto_dir <- TRUE      # Automatically create needed directories?
-runid <- "rescale"           # Additional ID to distinguish runs
+runid <- ""           # Additional ID to distinguish runs
 split <- TRUE         # Include features split by country?
 opt_ecoregions <- TRUE # Include ecoregions?
 # drop_features: Select which features to drop
 #   !! each ones should be a string
 #   !! To include all/exclude none leave empty `c()` or as `NULL`
 drop_feature <-  c()
-
-
-## RESOLUTION ====
-# Set shared resolution for all layers
-# Relative to 1km at equator (or 30 arcseconds in non-equal area projection)
-RES <- 5
-## Directory ID ====
-#   for different solutions at the same resolution
-dir_id <- ""
 
 ## 1.2 Shared options ====
 # Load options file to share options with pre-processing
@@ -57,27 +50,15 @@ if (solver == "cbc") {
     library(rcbc)
 } else if (solver == "lp") {
     library(lpsymphony)
-} else if (solver == "highs") {
-    library(highs)
 }
 
 ## 1.4 Directory-related variables ====
 dir_in <- file.path(dir_wd, "raw")
-dir_id <- ""
-dir_out <- file.path(dir_wd, "work_in_progress",
-                     paste0(RES, "km",
-                         ifelse(dir_id == "", "", paste0("_", dir_id))
-                     ))
-
-dir_in <- file.path(dir_wd, "raw")
-
-dirs <- create_info(dir_out)
-
-dirs["dir_output"] <- dir_output <- file.path(dirs["dir_out"], "output", ifelse(runid == "", "default", runid))
-dirs["dir_logs"] <- file.path(dirs["dir_out"], "logs", ifelse(runid == "", "default",runid))
+dir_output <- file.path(dir_out, "output", ifelse(runid == "", "default", runid))
+dir_logs <- file.path(dir_out, "logs", ifelse(runid == "", "default",runid))
 
 if (auto_dir) {
-    c(dirs) |>
+    c(dir_output, dir_logs) |>
         walk(\(x) if(!dir.exists(x)) { dir.create(x, recursive = TRUE)})
 }
 
@@ -93,7 +74,7 @@ rast_template <- rast(
 exclude_feature <- str_flatten(drop_feature, "|") # Create regex string to exclude vars
 if (is.null(drop_feature)) {exclude_feature <- "^$"} # Work-around for matching nothing so that if drop_features is empty, it selects them all
 
-variables <- read_csv(file.path(dirs["dir_out"], "preprocess_info.csv")) |>
+variables <- read_csv(file.path(dir_in, "preprocess_info.csv")) |>
     filter(grepl("ft_*", var)) |> # select only ft_ variables
     filter(!grepl(exclude_feature, var)) # exclude the variables in drop_feature
 
@@ -124,7 +105,7 @@ if (opt_ecoregions) {col_ecoregions <- "ecoregions"}
 
 if (!split) {
 
-    grid_cell <- open_dataset(file.path(dirs["dir_proc"], "global_cells"),
+    grid_cell <- open_dataset(file.path(dir_proc, "global_cells"),
                               partitioning = c("ISONUM")) |>
         select(id, x, y, any_of(col_ecoregions), all_of(ft_all)) |>
         mutate(
@@ -147,24 +128,16 @@ if (!split) {
 } else if (split) {
 
 
-    grid_cell <- open_dataset(file.path(dirs["dir_proc"], "global_cells"),
+    grid_cell <- open_dataset(file.path(dir_proc, "global_cells"),
                               partitioning = c("ISONUM")) |>
         select(id, x, y, any_of(col_ecoregions), all_of(ft_global)) |>
         mutate(
             across(.cols = c(id, x, y), ~as.integer(.x)),
             cost = 1
         ) |>
-        collect() |>
-        mutate(
-            across(
-                .cols = all_of(ft_global),
-                .fns = ~scales::rescale(.x,
-                                        to = c(0, 1),
-                                        from = c(0, max(.x, na.rm = TRUE)))
-            )
-        )
+        collect()
 
-    ft_split <- paste0(file.path(dirs["dir_proc"], "split"), "/", ft_national, ".parquet") |>
+    ft_split <- paste0(file.path(dir_proc, "split"), "/", ft_national, ".parquet") |>
         lapply(function(filename) { read_parquet(filename) }) |>
         do.call(rbind, args = _)
 
@@ -176,10 +149,6 @@ if (!split) {
 
 }
 
-# Extract relevant subsets
-# Allows to remove grid_cell later to save RAM
-costs <- select(grid_cell, c("id", "cost"))
-coords <- select(grid_cell, c("id", "x", "y"))
 
 # 3. FEATURE LIST ====
 ## 3.1 Split feature ids ====
@@ -191,7 +160,7 @@ if (is.null(drop_feature)) {exclude_feature <- "^$"}
 feat_master <- data.frame(name = NULL, species = NULL)
 # Get feature ids for the split-by-country features
 if (split) {
-    feat_ids_split <- list.files(file.path(dirs["dir_proc"], "split"),
+    feat_ids_split <- list.files(file.path(dir_proc, "split"),
                                  pattern = "*.csv", full.names = TRUE)
 
     feat_ids_split <- feat_ids_split[!grepl(exclude_feature, feat_ids_split)] |>
@@ -234,7 +203,7 @@ feat_ft <- feat_master
 if (opt_ecoregions) {
     # Prepare ecoregion features
 
-    ecoregions_data <- read_csv(file.path(dirs["dir_pu"], "global_ecoregions_moll.csv"))
+    ecoregions_data <- read_csv(file.path(dir_pu, "global_ecoregions_moll.csv"))
 
     feat_ecoregions <- ecoregions_data |>
         filter(!is.na(realised_extent)) |>
@@ -298,14 +267,11 @@ if (split) {
     }
 }
 
-# Remove now unnecessary objects
-rm(ft_split, rij_ecoregions, rij_global, grid_cell)
-gc()
 
 # 5. Targets ====
 ## 5.1  Ecoregion targets ====
 if (opt_ecoregions) {
-    ecoregions_data <- read_csv(file.path(dirs["dir_pu"], "global_ecoregions_moll.csv"))
+    ecoregions_data <- read_csv(file.path(dir_pu, "global_ecoregions_moll.csv"))
 
     targets_ecoregions <- ecoregions_data |>
         filter(!is.na(realised_extent)) |>
@@ -334,8 +300,11 @@ targets <- targets |>
     as.matrix()
 
 # 6. Problem and solution ====
+## 6.1 Costs ====
+costs <- grid_cell |>
+    select(id, cost)
 features <- rename(feat_master, "id" = species)
-## 6.1 Base problem ====
+## 6.2 Base problem ====
 # Create base problem
 print("Creating base problem...")
 p <- problem(
@@ -345,7 +314,6 @@ p <- problem(
     rij = rij
 ) |>
     add_relative_targets(targets)
-gc()
 
 budgets <- seq(0.05, 1, 0.05)
 solutions <- list() # Solutions for each budget
@@ -356,10 +324,7 @@ info_str <- paste0("{solver}_{RES}km_{opt_gap}g_{opt_threads}t_{budgets[i]}b_",
                    ifelse(runid == "", "default", runid))
 
 
-f <- file(file.path(dirs["dir_logs"], 
-              paste0(glue("log0_run_details_{solver}_{RES}km_{opt_gap}g_{opt_threads}t_"),
-                     ifelse(runid == "", "default", runid), ".txt")
-          ), open = "wt")
+f <- file(file.path(dir_logs, paste0("log0_run_details_", ifelse(runid == "", "default", runid), ".txt")), open = "wt")
 sink(f, append = TRUE)
 sink(f, append = TRUE, type = "message")
 print(glue::glue("== Details for run: {runid} == "))
@@ -381,13 +346,32 @@ solution_details <- data.frame()
 
 
 print("Starting each budget")
+####
 
+start_at <- 0.85
+
+
+
+
+
+####
 for (i in 1:length(budgets)) {
+    b <- budgets[i]
+    if (b < start_at) {
+        print(glue("Loading previous solution for budget {b}"))
+        s <- read.csv(file.path(dir_output, glue::glue("solution_single_", info_str, ".csv")))
+        print(head(s))
+        solutions[[i]] <- s 
+        next
+    }
+    
+    
+    
     glue::glue("= Starting budget {budgets[i]} =") |> print()
 
     # START LOGGING
     file <- file(
-                 file.path(dirs["dir_logs"], str_glue("log{i}_", {info_str}, ".txt")),
+                 file.path(dir_logs, str_glue("log{i}_", {info_str}, ".txt")),
                  open = "wt")
     sink(file, append = TRUE)
     sink(file, append = TRUE, type = "message")
@@ -404,19 +388,14 @@ for (i in 1:length(budgets)) {
             add_min_shortfall_objective(budget = b_cells)
     } else { # Add locked-in constraints of previous solution
         # Format previous solution for locked-in constraint
-        # prev <- solutions[[i - 1]]
-        b_prev <- budgets[i-1]
-        prev <- fread(file.path(dirs["dir_output"], 
-                                paste0(
-                                    glue("solution_single_{solver}_{RES}km_{opt_gap}g_{opt_threads}t_{b_prev}b_",
-                                            ifelse(runid == "", "default", runid),".csv"))),
-                      col.names = c("id", "cost", "solution"))
-        prev <- prev[,solution := fifelse(solution == 1, TRUE, FALSE)]              
-                      
+        prev <- solutions[[i - 1]]
+        prev_mod <- cbind(prev[, 1:2],
+                          sapply(prev[, 3],
+                                 FUN = \(x) if_else(x == 1, TRUE, FALSE)))
         # Update problem
         p2 <- p |>
             add_min_shortfall_objective(budget = b_cells) |>
-            add_locked_in_constraints(prev[[3]])
+            add_locked_in_constraints(prev_mod[[3]])
     } # IF i
 
     # Select correct solver and set options
@@ -431,13 +410,6 @@ for (i in 1:length(budgets)) {
         p2 <- p2 |>
             add_lpsymphony_solver(
                 gap = opt_gap,
-                verbose = TRUE
-            )
-    } else if (solver == "highs") {
-        p2 <- p2 |>
-            add_highs_solver(
-                gap = opt_gap,
-                threads = opt_threads,
                 verbose = TRUE
             )
     } # IF solver
@@ -475,7 +447,7 @@ for (i in 1:length(budgets)) {
     print(glue::glue("Solving took {as.numeric((end - start), units = 'secs')} seconds long...!"))
 
     if (write_each == TRUE) {
-        fwrite(s, file.path(dirs["dir_output"], glue::glue("solution_single_", info_str, ".csv")))
+        fwrite(s, file.path(dir_output, glue::glue("solution_single_", info_str, ".csv")))
     } # IF write_each
 
     # END LOGGING
@@ -484,9 +456,6 @@ for (i in 1:length(budgets)) {
     close(file)
 
     print(glue::glue("Solving took {as.numeric((end - start), units = 'secs')} seconds long...!"))
-    print("Clearing RAM")
-    rm(p2, s)
-    gc()
 } # FOR budget
 
 # 7. Output solutions ====
@@ -500,8 +469,8 @@ combined_solution <- joined_solution[, `:=` (final = rowSums(.SD)),
                                .SDcols = !c("id")
                                ][, .(id, final)]
 combined_solution <- combined_solution |>
-    left_join(coords, by = "id") |>
-    write_csv(file.path(dirs["dir_output"],
+    left_join(select(grid_cell, c("id", "x", "y")), by = "id") |>
+    write_csv(file.path(dir_output,
                         glue::glue("solution_full_{solver}_{RES}km_{opt_gap}g_{opt_threads}t_",
                                    ifelse(runid == "", "default", runid),
                                    ".csv")
@@ -516,15 +485,15 @@ r <- rast(
 )
 
 writeRaster(r,
-            file.path(dirs["dir_output"],
+            file.path(dir_output,
                         glue::glue("solution_full_{solver}_{RES}km_{opt_gap}g_{opt_threads}t_",
                                    ifelse(runid == "", "default", runid),
-                                   ".tif")
+                                   ".csv")
                                    ),
             overwrite = TRUE)
 
 times_df <- write.csv(solution_details,
-                      file.path(dirs["dir_logs"],
+                      file.path(dir_logs,
                         glue::glue("solution_full_{solver}_{RES}km_{opt_gap}g_{opt_threads}t_",
                                    ifelse(runid == "", "default", runid),
                                    ".csv")
