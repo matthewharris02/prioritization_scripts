@@ -227,10 +227,12 @@ if (pp_restorable) {
     print("* Processing Restorable Land *")
     lulc_converted <- rast(file.path(dirs["dir_pu"], fn_template("lulc_converted")))
     hfp_intermediate <- rast(file.path(dirs["dir_pu"], fn_template("hfp_mask")))
+    pu <- rast(file.path(dirs["dir_pu"], fn_template("countries_mask")))
     # Include/restorable = 1, exclude = NA
     restorable <- hfp_intermediate |>
-        mask(lulc_converted, maskvalue = c(0), updatevalue = NA) |>
         classify(cbind(0, NA)) |>
+        mask(lulc_converted, maskvalue = c(0), updatevalue = NA) |> # 0 = converted land
+        mask(pu, maskvalue = c(0, NA), updatevalue = NA) |> 
         writeRaster(file.path(dirs["dir_pu"], fn_template("restorable_land")), overwrite = TRUE)
 
     # TODO: Make output name include the HFP bounds for easy identification
