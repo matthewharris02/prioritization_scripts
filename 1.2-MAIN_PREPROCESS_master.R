@@ -171,10 +171,11 @@ if (pp_countries) {
         writeRaster(file.path(dirs["dir_pu"], fn_template("countries")),
                     overwrite = TRUE)
 
+    lakes <- rast(file.path(dirs["dir_inter"], fn_template("lakes_mask")))
     # Land mask for countries
     countries_mask <- countries_rast |>
         classify(cbind(-Inf, Inf, TRUE)) |>
-        mask(rast(file.path(dirs["dir_inter"], fn_template("lakes_mask"))), maskvalues = c(1), updatevalue=NA) |>
+        mask(lakes, maskvalues = c(1), updatevalue=NA) |>
         writeRaster(file.path(dirs["dir_pu"], fn_template("countries_mask")),
                     overwrite = TRUE)
 }
