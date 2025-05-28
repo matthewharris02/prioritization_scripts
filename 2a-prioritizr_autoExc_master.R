@@ -31,7 +31,7 @@ opt_threads <- 1      # Choose number of threads (ONLY for CBC or HIGHS solver)
 
 ### Solution-related options ====
 auto_dir <- TRUE      # Automatically create needed directories?
-runid <- ""           # Additional ID to distinguish runs
+runid <- "rescale"           # Additional ID to distinguish runs
 split <- TRUE         # Include features split by country?
 opt_ecoregions <- TRUE # Include ecoregions?
 # drop_features: Select which features to drop
@@ -154,7 +154,15 @@ if (!split) {
             across(.cols = c(id, x, y), ~as.integer(.x)),
             cost = 1
         ) |>
-        collect()
+        collect() |>
+        mutate(
+            across(
+                .cols = all_of(ft_global),
+                .fns = ~scales::rescale(.x,
+                                        to = c(0, 1),
+                                        from = c(0, max(.x, na.rm = TRUE)))
+            )
+        )
 
     ft_split <- paste0(file.path(dirs["dir_proc"], "split"), "/", ft_national, ".parquet") |>
         lapply(function(filename) { read_parquet(filename) }) |>
@@ -477,7 +485,7 @@ for (i in 1:length(budgets)) {
 
     print(glue::glue("Solving took {as.numeric((end - start), units = 'secs')} seconds long...!"))
     print("Clearing RAM")
-    rm(p2, s, prev)
+    rm(p2, s)
     gc()
 } # FOR budget
 
