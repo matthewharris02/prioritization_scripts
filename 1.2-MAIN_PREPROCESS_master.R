@@ -449,7 +449,7 @@ if (pp_cells) {
     print("Extraction complete!")
     rm(vals)
 
-    pu_vals <- read_parquet(file.path(dirs["dir_proc"], glue("all.parquet")))
+    pu_vals <- read_parquet(file.path(dirs["dir_proc"], glue("vals.parquet")))
 
     # Probably unnecessary as this is in the fuction above
     pu_vals <- pu_vals[!is.na(ISONUM),  # Ensure within UN boundary 
